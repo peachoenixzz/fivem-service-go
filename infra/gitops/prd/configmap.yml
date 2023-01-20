@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-env-config
+  namespace: workshop-prd
+data:
+  HOSTNAME: ''
+  PORT: '1323'
+  FLAG_IS_LIMIT_MAX_SPEND_ON_CREATE: 'true'
+  DB_CONNECTION: '<DB_CONNECTION_PRD>'
