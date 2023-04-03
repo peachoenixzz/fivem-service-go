@@ -1,9 +1,8 @@
-package fivemlogs
+package playerlogs
 
 import (
 	"github.com/kkgo-software-engineering/workshop/mlog"
 	"github.com/labstack/echo/v4"
-	"github.com/spf13/cast"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 	"net/http"
@@ -16,33 +15,33 @@ type Message struct {
 }
 
 type Response struct {
-	ID      primitive.ObjectID `bson:"_id,omitempty"`
-	Event   string             `bson:"event"`
-	Content string             `bson:"content"`
-	Source  int                `bson:"source"`
-	Color   string             `bson:"color"`
+	ID      primitive.ObjectID `json:"ID" bson:"_id,omitempty"`
+	Event   string             `json:"event" bson:"event"`
+	Content string             `json:"content" bson:"content"`
+	Source  int                `json:"source" bson:"source"`
+	Color   string             `json:"color" bson:"color"`
 	Options struct {
-		Public    bool `bson:"public"`
-		Important bool `bson:"important"`
-	} `json:"options"`
-	Image     string    `bson:"image"`
-	Timestamp time.Time `bson:"timestamp"`
+		Public    bool `json:"public" bson:"public"`
+		Important bool `json:"important" bson:"important"`
+	} `json:"options" bson:"options"`
+	Image     string    `json:"image" bson:"image"`
+	Timestamp time.Time `json:"timestamp" bson:"timestamp"`
 	Player    struct {
-		Name        string `bson:"name"`
+		Name        string `json:"name" bson:"name"`
 		Identifiers struct {
-			Ip       string `bson:"ip"`
-			Steam    string `bson:"steam"`
-			Discord  string `bson:"discord"`
-			License  string `bson:"license"`
-			License2 string `bson:"license2"`
-		} `bson:"identifiers"`
+			Ip       string `json:"ip" bson:"ip"`
+			Steam    string `json:"steam" bson:"steam"`
+			Discord  string `json:"discord" bson:"discord"`
+			License  string `json:"license" bson:"license"`
+			License2 string `json:"license2" bson:"license2"`
+		} `json:"identifiers" bson:"identifiers"`
 		Steam struct {
-			Id     int    `bson:"id"`
-			Avatar string `bson:"avatar"`
-			Url    string `bson:"url"`
-		} `bson:"steam"`
-	} `bson:"player"`
-	Hardware []string `bson:"hardware"`
+			Id     int    `json:"id" bson:"id"`
+			Avatar string `json:"avatar" bson:"avatar"`
+			Url    string `json:"url" bson:"url"`
+		} `json:"steam" bson:"steam"`
+	} `json:"player" bson:"player"`
+	Hardware []string `json:"hardware" bson:"hardware"`
 }
 
 type Request struct {
@@ -77,6 +76,7 @@ type Request struct {
 func (h Handler) GetFiveMLogEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
 	res, err := h.FiveMLog()
+	logger.Info("get request event endpoint successfully")
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
@@ -90,7 +90,7 @@ func (h Handler) AddFiveMLogEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
 	req := Request{}
 	err := c.Bind(&req)
-	//req.Event = strings.ToLower(req.Event)
+	logger.Info("get request event endpoint successfully")
 	if err != nil {
 		logger.Error("bad request body", zap.Error(err))
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request body", err.Error())
@@ -98,6 +98,7 @@ func (h Handler) AddFiveMLogEndPoint(c echo.Context) error {
 
 	var mes Message
 	mes, err = h.InsertMLog(req)
+	logger.Info("prepare data to create successfully")
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, mes)
@@ -109,28 +110,29 @@ func (h Handler) AddFiveMLogEndPoint(c echo.Context) error {
 
 func (h Handler) CaseEventAndSteamIDEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
-	steamID := cast.ToInt(c.Param("steamid"))
+	steamID := c.Param("steamid")
 	event := c.Param("event")
-	res, err := h.LogByEventAndSteamID(steamID, event)
+	logger.Info("prepare log")
+	res, err := h.LogCaseEventAndSteamID(steamID, event)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
-	logger.Info("Get Log by steamid and event successfully")
+	logger.Info("get event case and steam id endpoint")
 	return c.JSON(http.StatusOK, res)
 }
 
 func (h Handler) AllEventAndSteamIDEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
-	steamID := cast.ToInt(c.Param("steamid"))
+	steamID := c.Param("steamid")
 	res, err := h.LogAllEventAndSteamID(steamID)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
-	logger.Info("Get Log by steamid and event successfully")
+	logger.Info("get event and steamid endpoint")
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -143,6 +145,6 @@ func (h Handler) ByEventEndPoint(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
-	logger.Info("Get Log by steamid and event successfully")
+	logger.Info("get event endpoint successfully")
 	return c.JSON(http.StatusOK, res)
 }

@@ -7,12 +7,12 @@ import (
 
 type env func(key string) string
 
-type cfg struct {
+type Cfg struct {
 	getEnv env
 }
 
-func New() *cfg {
-	return &cfg{getEnv: os.Getenv}
+func New() *Cfg {
+	return &Cfg{getEnv: os.Getenv}
 }
 
 type Config struct {
@@ -20,6 +20,7 @@ type Config struct {
 	FeatureFlag       FeatureFlag
 	DBConnection      string
 	MongoDBConnection string
+	MySQLDBConnection string
 }
 
 type Server struct {
@@ -42,10 +43,11 @@ const (
 const (
 	dPort             = 1323
 	dDBConnection     = "postgresql://postgres:password@localhost:5432/banking?sslmode=disable"
-	mongoDBConnection = "mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs"
+	mongoDBConnection = "mongodb://fivemlogs:isylzjkoshkm001@localhost/fivem-logs" //mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs
+	mySQLDBConnection = "mysql://doraemonfivem:Doraemon001FiveM@localhost/es_extended"
 )
 
-func (c *cfg) All() Config {
+func (c *Cfg) All() Config {
 	return Config{
 		Server: Server{
 			Hostname: c.envString(cHostname, ""),
@@ -56,14 +58,15 @@ func (c *cfg) All() Config {
 		},
 		DBConnection:      c.envString(cDBConnection, dDBConnection),
 		MongoDBConnection: c.envString(cDBConnection, mongoDBConnection),
+		MySQLDBConnection: c.envString(cDBConnection, mySQLDBConnection),
 	}
 }
 
-func (c *cfg) SetEnvGetter(overrideEnvGetter env) {
+func (c *Cfg) SetEnvGetter(overrideEnvGetter env) {
 	c.getEnv = overrideEnvGetter
 }
 
-func (c *cfg) envString(key, defaultValue string) string {
+func (c *Cfg) envString(key, defaultValue string) string {
 	val := c.getEnv(key)
 	if val == "" {
 		return defaultValue
@@ -71,7 +74,7 @@ func (c *cfg) envString(key, defaultValue string) string {
 	return val
 }
 
-func (c *cfg) envInt(key string, defaultValue int) int {
+func (c *Cfg) envInt(key string, defaultValue int) int {
 	v := c.getEnv(key)
 
 	val, err := strconv.Atoi(v)
@@ -82,7 +85,7 @@ func (c *cfg) envInt(key string, defaultValue int) int {
 	return val
 }
 
-func (c *cfg) envBool(key string, defaultValue bool) bool {
+func (c *Cfg) envBool(key string, defaultValue bool) bool {
 	v := c.getEnv(key)
 
 	val, err := strconv.ParseBool(v)

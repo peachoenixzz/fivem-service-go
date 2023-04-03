@@ -1,8 +1,9 @@
-package fivemlogs
+package playerlogs
 
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/kkgo-software-engineering/workshop/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,81 +31,70 @@ func (h Handler) InsertMLog(req Request) (Message, error) {
 }
 
 func (h Handler) FiveMLog() ([]Response, error) {
-	var res []Response
-	findOptions := options.Find()
-	findOptions.SetLimit(100)
+	opts := options.Find().SetSort(bson.M{"_id": -1}).SetLimit(100)
 	col := h.MongoDB.Database("fivem-logs").Collection("fivemlogs")
-
-	cur, err := col.Find(context.Background(), bson.M{}, findOptions)
+	cur, err := col.Find(context.Background(), bson.M{}, opts)
 	if err != nil {
-		return []Response{}, err
+		return nil, err
 	}
 
+	var res []Response
 	if err := cur.All(context.Background(), &res); err != nil {
-		return []Response{}, err
-	}
-	if err != nil {
-		return []Response{}, err
+		return nil, err
 	}
 	return res, nil
 }
 
-func (h Handler) LogByEventAndSteamID(steamid int, event string) ([]Response, error) {
-	var res []Response
-	findOptions := options.Find()
-	findOptions.SetLimit(100)
+func (h Handler) LogCaseEventAndSteamID(steamid string, event string) ([]Response, error) {
+	opts := options.Find().SetSort(bson.M{"_id": -1}).SetLimit(100)
+	f := bson.M{
+		"player.identifiers.steam": fmt.Sprintf("steam:%s", steamid),
+		"event":                    event,
+	}
 	col := h.MongoDB.Database("fivem-logs").Collection("fivemlogs")
-
-	cur, err := col.Find(context.Background(), bson.M{"$and": []bson.M{{"player.steam.id": steamid}, {"event": event}}}, findOptions)
+	cur, err := col.Find(context.Background(), f, opts)
 	if err != nil {
-		return []Response{}, err
+		return nil, err
 	}
 
+	var res []Response
 	if err := cur.All(context.Background(), &res); err != nil {
-		return []Response{}, err
-	}
-	if err != nil {
-		return []Response{}, err
+		return nil, err
 	}
 	return res, nil
 }
 
-func (h Handler) LogAllEventAndSteamID(steamid int) ([]Response, error) {
-	var res []Response
-	findOptions := options.Find()
-	findOptions.SetLimit(100)
+func (h Handler) LogAllEventAndSteamID(steamid string) ([]Response, error) {
+	opts := options.Find().SetSort(bson.M{"_id": -1}).SetLimit(100)
+	fmt.Println(fmt.Sprintf("steam:%s", steamid))
+	f := bson.M{
+		"player.identifiers.steam": fmt.Sprintf("steam:%s", steamid),
+	}
 	col := h.MongoDB.Database("fivem-logs").Collection("fivemlogs")
-
-	cur, err := col.Find(context.Background(), bson.M{"player.steam.id": steamid}, findOptions)
+	cur, err := col.Find(context.Background(), f, opts)
 	if err != nil {
-		return []Response{}, err
+		return nil, err
 	}
 
+	var res []Response
 	if err := cur.All(context.Background(), &res); err != nil {
-		return []Response{}, err
-	}
-	if err != nil {
-		return []Response{}, err
+		return nil, err
 	}
 	return res, nil
 }
 
 func (h Handler) LogCaseEventAll(event string) ([]Response, error) {
-	var res []Response
-	findOptions := options.Find()
-	findOptions.SetLimit(100)
+	opts := options.Find().SetSort(bson.M{"_id": -1}).SetLimit(100)
 	col := h.MongoDB.Database("fivem-logs").Collection("fivemlogs")
 
-	cur, err := col.Find(context.Background(), bson.M{"event": event}, findOptions)
+	cur, err := col.Find(context.Background(), bson.M{"event": event}, opts)
 	if err != nil {
-		return []Response{}, err
+		return nil, err
 	}
 
+	var res []Response
 	if err := cur.All(context.Background(), &res); err != nil {
-		return []Response{}, err
-	}
-	if err != nil {
-		return []Response{}, err
+		return nil, err
 	}
 	return res, nil
 }

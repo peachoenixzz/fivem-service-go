@@ -1,72 +1,49 @@
 package main
 
 import (
-	"context"
-	"database/sql"
-	"fmt"
+	"github.com/kkgo-software-engineering/workshop/playerlogin"
+	"github.com/kkgo-software-engineering/workshop/policelogs"
 	"log"
-	"net/http"
 	"os"
-	"os/signal"
-	"time"
 
-	"github.com/kkgo-software-engineering/workshop/config"
-	"github.com/kkgo-software-engineering/workshop/router"
-	"go.uber.org/zap"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-
+	"github.com/kkgo-software-engineering/workshop/playerlogs"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 func main() {
-	cfg := config.New().All()
 
 	logger, err := zap.NewProduction()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("sqlDB : ", cfg.DBConnection)
-	postgresDB, err := sql.Open("postgres", cfg.DBConnection)
-	if err != nil {
-		logger.Fatal("unable to configure database", zap.Error(err))
+	if os.Getenv("playerlogin") != "" {
+		logger.Info("prepare to playerlogin")
+		playerlogin.InitService()
+		logger.Info("Registered FiveM log service on /playerlogs")
 	}
 
-	ctx := context.Background()
-	fmt.Println("mongourl : ", cfg.MongoDBConnection)
-	clientOptions := options.Client().ApplyURI(cfg.MongoDBConnection)
-	mongoDB, err := mongo.Connect(ctx, clientOptions)
-	if err != nil {
-		logger.Fatal("unable to configure database", zap.Error(err))
-	}
-	e := router.RegRoute(cfg, logger, postgresDB, mongoDB)
-	err = mongoDB.Ping(ctx, nil)
-	if err != nil {
-		fmt.Printf("unable to ping, error: %v", err)
-		os.Exit(1)
+	if os.Getenv("policelogs") != "" {
+		logger.Info("prepare to policelogs")
+		policelogs.InitService()
+		logger.Info("Registered FiveM log service on /policelogs")
 	}
 
-	addr := fmt.Sprintf("%s:%d", cfg.Server.Hostname, cfg.Server.Port)
-
-	go func() {
-		err := e.Start(addr)
-		if err != nil && err != http.ErrServerClosed {
-			logger.Fatal("unexpected shutdown the server", zap.Error(err))
-		}
-		logger.Info("gracefully shutdown the server")
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-	<-quit
-
-	gCtx := context.Background()
-	ctx, cancel := context.WithTimeout(gCtx, 10*time.Second)
-	defer cancel()
-
-	if err := e.Shutdown(ctx); err != nil {
-		logger.Fatal("unexpected shutdown the server", zap.Error(err))
+	//fmt.Println(os.Getenv("playerlogs"))
+	// Register the FiveM log service if enabled
+	if os.Getenv("playerlogs") != "" {
+		logger.Info("prepare to playerlogs")
+		playerlogs.InitService()
+		logger.Info("Registered FiveM log service on /playerlogs")
 	}
+
+	logger.Info("Register service fail")
+	//// Register the FiveM police log service if enabled
+	//if *fivempolicelogEnabled {
+	//	fivempolicelog := NewFiveMPoliceLogService()
+	//	mux.HandleFunc("/fivempolicelog", fivempolicelog.HandleRequest)
+	//	log.Printf("Registered FiveM police log service on /fivempolicelog")
+	//}
+
 }

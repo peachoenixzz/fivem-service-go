@@ -1,6 +1,6 @@
 //go:build unit
 
-package router
+package playerlogs
 
 import (
 	"database/sql"
