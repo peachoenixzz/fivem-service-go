@@ -5,58 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6469f401-2e2b-4fe8-9e8b-ecf5518a002b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/cashshop/endpoint.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cashshop/initService.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cashshop/mysql-repo.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cashshop/router.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cashshop/router_test.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fivemroutine/initService.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fivemroutine/mysql-repo.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fivemroutine/service.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/middleware/repo-mysql.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/converttime/main.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeridentifier/endpoint.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeridentifier/initService.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeridentifier/mysql-repo.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeridentifier/router.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeridentifier/router_test.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeridentifier/service.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeritems/endpoint.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeritems/initService.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeritems/mysql-repo.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeritems/router.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playeritems/router_test.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playerlogin/mysql-repo.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playerlogs/models.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playerlogs/service.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playerstats/endpoint.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playerstats/initService.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playerstats/mysql-repo.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playerstats/router.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playerstats/router_test.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/uploadimage/endpoint.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/uploadimage/initService.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/uploadimage/router.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/uploadimage/service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/config.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/middleware/auth.go" beforeDir="false" afterPath="$PROJECT_DIR$/middleware/auth.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mlog/mlog.go" beforeDir="false" afterPath="$PROJECT_DIR$/mlog/mlog.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/playerlogin/endpoint.go" beforeDir="false" afterPath="$PROJECT_DIR$/playerlogin/endpoint.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/playerlogin/initService.go" beforeDir="false" afterPath="$PROJECT_DIR$/playerlogin/initService.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/playerlogin/mongo-repo.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/playerlogin/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/playerlogin/router.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/playerlogs/endpoint.go" beforeDir="false" afterPath="$PROJECT_DIR$/playerlogs/endpoint.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/playerlogs/mongo-repo.go" beforeDir="false" afterPath="$PROJECT_DIR$/playerlogs/mongo-repo.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/playerlogs/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/playerlogs/router.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/policelogs/endpoint.go" beforeDir="false" afterPath="$PROJECT_DIR$/policelogs/endpoint.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/policelogs/mongo-repo.go" beforeDir="false" afterPath="$PROJECT_DIR$/policelogs/mongo-repo.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/policelogs/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/policelogs/router.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workshop" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
