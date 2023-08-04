@@ -2,7 +2,11 @@ package middleware
 
 import (
 	"crypto/subtle"
-	"fmt"
+	"database/sql"
+	"github.com/kkgo-software-engineering/workshop/config"
+	"github.com/kkgo-software-engineering/workshop/mlog"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
 
@@ -11,9 +15,27 @@ import (
 )
 
 type JwtCustomClaims struct {
-	Name  string `json:"name"`
-	Admin bool   `json:"admin"`
+	Identifier string `json:"identifier"`
+	Job        string `json:"job"`
+	Group      string `json:"group"`
 	jwt.RegisteredClaims
+}
+
+type Response struct {
+	Identifier string `json:"identifier"`
+	Job        string `json:"job"`
+	Group      string `json:"group"`
+}
+
+type Handler struct {
+	Cfg        config.FeatureFlag
+	PostgresDB *sql.DB
+	MongoDB    *mongo.Client
+	mysqlDB    *sql.DB
+}
+
+type LoginService interface {
+	Login()
 }
 
 func Authenicate() func(username, password string, c echo.Context) (bool, error) {
@@ -26,33 +48,30 @@ func Authenicate() func(username, password string, c echo.Context) (bool, error)
 	}
 }
 
-func Login(c echo.Context) error {
-	username := c.FormValue("username")
-	password := c.FormValue("password")
-
-	// Throws unauthorized error
-	if username != "jon" || password != "shhh!" {
-		return echo.ErrUnauthorized
-	}
-
+func LoginSuccess(c echo.Context, res Response) error {
 	// Set custom claims
+	logger := mlog.L(c)
+	logger.Info("prepare JWT Data")
 	claims := &JwtCustomClaims{
-		"Jon Snow",
-		true,
+		res.Identifier,
+		res.Job,
+		res.Group,
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 12)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
 		},
 	}
-
+	logger.Info("prepare encode HS256")
 	// Create token with claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
+	logger.Info("generate token for user")
 	// Generate encoded token and send it as response.
 	t, err := token.SignedString([]byte("550076b5-532c-439e-92d9-655f8207fdee"))
 	if err != nil {
+		logger.Error("failed to generate", zap.Error(err))
 		return err
 	}
-
+	logger.Info("ready to return token to user")
 	return c.JSON(http.StatusOK, echo.Map{
 		"token": t,
 	})
@@ -60,13 +79,4 @@ func Login(c echo.Context) error {
 
 func accessible(c echo.Context) error {
 	return c.String(http.StatusOK, "Accessible")
-}
-
-func Restricted(c echo.Context) error {
-
-	fmt.Println("test Restricted")
-	user := c.Get("user").(*jwt.Token)
-	claims := user.Claims.(*JwtCustomClaims)
-	name := claims.Name
-	return c.String(http.StatusOK, "Welcome "+name+"!")
 }

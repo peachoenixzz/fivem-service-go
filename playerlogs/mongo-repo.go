@@ -21,7 +21,33 @@ func New(cfgFlag config.FeatureFlag, postgresDB *sql.DB, mongoDB *mongo.Client) 
 	return &Handler{cfgFlag, postgresDB, mongoDB}
 }
 
-func (h Handler) InsertMLog(req Request) (Message, error) {
+func (h Handler) CustomMLog(req RequestCustomLog) ([]Response, error) {
+	opts := options.Find().SetSort(bson.M{"_id": -1}).SetLimit(500)
+
+	fmt.Println(req.Begin, req.Until)
+
+	f := selectQuery(req)
+
+	fmt.Println("Query:", f)
+
+	col := h.MongoDB.Database("fivem-logs").Collection("fivemlogs")
+	cur, err := col.Find(context.Background(), f, opts)
+	if err != nil {
+		return []Response{}, err
+	}
+
+	var res []Response
+	if err := cur.All(context.Background(), &res); err != nil {
+		return []Response{}, err
+	}
+
+	for _, v := range res {
+		fmt.Println(fmt.Sprintf("Player : %v %v ", v.Event, v.Content))
+	}
+	return res, nil
+}
+
+func (h Handler) InsertMLog(req RequestInsert) (Message, error) {
 	col := h.MongoDB.Database("fivem-logs").Collection("fivemlogs")
 	_, err := col.InsertOne(context.Background(), req)
 	if err != nil {

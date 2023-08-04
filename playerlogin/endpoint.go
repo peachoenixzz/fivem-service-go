@@ -1,6 +1,8 @@
 package playerlogin
 
 import (
+	"fmt"
+	mw "github.com/kkgo-software-engineering/workshop/middleware"
 	"github.com/kkgo-software-engineering/workshop/mlog"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -13,113 +15,32 @@ type Message struct {
 }
 
 type Response struct {
-	Title                 string        `json:"title"`
-	ArrestPlayerName      string        `json:"arrest_player_name"`
-	PolicePlayerName      string        `json:"police_player_name"`
-	ArrestSteamPlayerName string        `json:"arrest_steam_player_name"`
-	PoliceSteamPlayerName string        `json:"police_steam_player_name"`
-	ArrestJobPlayer       string        `json:"arrest_job_player"`
-	ArrestSexPlayer       string        `json:"arrest_sex_player"`
-	Case                  []interface{} `json:"case"`
-	CaseCustom            []interface{} `json:"case_custom"`
-	TimeCustom            []interface{} `json:"time_custom"`
-	FineCustom            []interface{} `json:"fine_custom"`
-	AllMiliSec            int64         `json:"all_milisec"`
-	AllMinute             int64         `json:"all_mins"`
-	AllFine               int64         `json:"all_fine"`
-	PoliceDecreaseTime    int64         `json:"police_decrease_time"`
+	Identifier string `json:"identifier"`
+	Job        string `json:"job"`
+	Group      string `json:"group"`
 }
 
 type Request struct {
-	Title                 string        `json:"title"`
-	ArrestPlayerName      string        `json:"arrest_player_name"`
-	PolicePlayerName      string        `json:"police_player_name"`
-	ArrestSteamPlayerName string        `json:"arrest_steam_player_name"`
-	PoliceSteamPlayerName string        `json:"police_steam_player_name"`
-	ArrestJobPlayer       string        `json:"arrest_job_player"`
-	ArrestSexPlayer       string        `json:"arrest_sex_player"`
-	Case                  []interface{} `json:"case"`
-	CaseCustom            []interface{} `json:"case_custom"`
-	TimeCustom            []interface{} `json:"time_custom"`
-	FineCustom            []interface{} `json:"fine_custom"`
-	AllMiliSec            int64         `json:"all_milisec"`
-	AllMinute             int64         `json:"all_mins"`
-	AllFine               int64         `json:"all_fine"`
-	PoliceDecreaseTime    int64         `json:"police_decrease_time"`
+	Identifier string `json:"identifier"`
 }
 
-func (h Handler) GetFiveMLogEndPoint(c echo.Context) error {
+func (h Handler) GetPlayerIdentify(c echo.Context) error {
 	logger := mlog.L(c)
-	res, err := h.FiveMLog()
-	logger.Info("get request event endpoint successfully")
-	if err != nil {
-		logger.Error("Database Error : ", zap.Error(err))
-		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	var req Request
+	logger.Info("prepare to bind request to struct request")
+	if err := c.Bind(&req); err != nil {
+		logger.Error("Bind Err: ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-
-	logger.Info("get result successfully")
-	return c.JSON(http.StatusOK, res)
-}
-
-func (h Handler) AddPoliceLogEndPoint(c echo.Context) error {
-	logger := mlog.L(c)
-	req := Request{}
-	err := c.Bind(&req)
-	logger.Info("get request event endpoint successfully")
-	if err != nil {
-		logger.Error("bad request body", zap.Error(err))
-		return echo.NewHTTPError(http.StatusBadRequest, "bad request body", err.Error())
-	}
-
-	var mes Message
-	mes, err = h.InsertMLog(req)
-	logger.Info("prepare data to create successfully")
-	if err != nil {
-		logger.Error("Database Error : ", zap.Error(err))
-		return echo.NewHTTPError(http.StatusInternalServerError, mes)
-	}
-
-	logger.Info("create successfully")
-	return c.JSON(http.StatusCreated, mes)
-}
-
-func (h Handler) CaseEventAndSteamIDEndPoint(c echo.Context) error {
-	logger := mlog.L(c)
-	steamID := c.Param("steamid")
-	event := c.Param("event")
 	logger.Info("prepare log")
-	res, err := h.LogCaseEventAndSteamID(steamID, event)
+	fmt.Printf("steam id is %s", req.Identifier)
+
+	res, err := h.PlayerIdentify(c.Request().Context(), req)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
-	logger.Info("get event case and steam id endpoint")
-	return c.JSON(http.StatusOK, res)
-}
-
-func (h Handler) AllEventAndSteamIDEndPoint(c echo.Context) error {
-	logger := mlog.L(c)
-	steamID := c.Param("steamid")
-	res, err := h.LogAllEventAndSteamID(steamID)
-	if err != nil {
-		logger.Error("Database Error : ", zap.Error(err))
-		return echo.NewHTTPError(http.StatusInternalServerError, res)
-	}
-
-	logger.Info("get event and steamid endpoint")
-	return c.JSON(http.StatusOK, res)
-}
-
-func (h Handler) ByEventEndPoint(c echo.Context) error {
-	logger := mlog.L(c)
-	event := c.Param("event")
-	res, err := h.LogCaseEventAll(event)
-	if err != nil {
-		logger.Error("Database Error : ", zap.Error(err))
-		return echo.NewHTTPError(http.StatusInternalServerError, res)
-	}
-
-	logger.Info("get event endpoint successfully")
-	return c.JSON(http.StatusOK, res)
+	logger.Info("GetPlayerIdentify endpoint end")
+	return mw.LoginSuccess(c, mw.Response(res))
 }

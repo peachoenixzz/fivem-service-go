@@ -4,15 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/kkgo-software-engineering/workshop/config"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/kkgo-software-engineering/workshop/config"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 )
 
 func InitService() {
@@ -22,12 +24,6 @@ func InitService() {
 	logger, err := zap.NewProduction()
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	fmt.Println("sqlDB : ", cfg.DBConnection)
-	postgresDB, err := sql.Open("postgres", cfg.DBConnection)
-	if err != nil {
-		logger.Fatal("unable to configure database", zap.Error(err))
 	}
 
 	fmt.Println("MySQL : ", cfg.MySQLDBConnection)
@@ -44,7 +40,7 @@ func InitService() {
 		logger.Fatal("unable to configure database", zap.Error(err))
 	}
 
-	e := RegRoute(cfg, logger, postgresDB, mongoDB, mysqlDB)
+	e := RegRoute(cfg, logger, mongoDB, mysqlDB)
 	err = mongoDB.Ping(ctx, nil)
 	if err != nil {
 		fmt.Printf("mongodb unable to ping, error: %v", err)

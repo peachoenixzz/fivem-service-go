@@ -30,7 +30,7 @@ func (h Handler) InsertMLog(req Request) (Message, error) {
 	return Message{Status: http.StatusCreated, Message: "Created Success"}, nil
 }
 
-func (h Handler) FiveMLog() ([]Response, error) {
+func (h Handler) PoliceLog() ([]Response, error) {
 	opts := options.Find().SetSort(bson.M{"_id": -1}).SetLimit(100)
 	col := h.MongoDB.Database("fivem-logs").Collection("policelogs")
 	cur, err := col.Find(context.Background(), bson.M{}, opts)

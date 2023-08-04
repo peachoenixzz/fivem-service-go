@@ -44,7 +44,10 @@ const (
 	dPort             = 1323
 	dDBConnection     = "postgresql://postgres:password@localhost:5432/banking?sslmode=disable"
 	mongoDBConnection = "mongodb://fivemlogs:isylzjkoshkm001@localhost/fivem-logs" //mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs
-	mySQLDBConnection = "mysql://doraemonfivem:Doraemon001FiveM@localhost/es_extended"
+	mySQLDBConnection = "doraemonfivem:Doraemon001FiveM@tcp(103.212.181.194:3306)/es_extended"
+
+	//mongoDBConnection = "mongodb://fivemlogs:isylzjkoshkm001@localhost/fivem-logs" //mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs
+	//mySQLDBConnection = "doraemonfivem:Doraemon001FiveM@tcp(localhost:3306)/"
 )
 
 func (c *Cfg) All() Config {
