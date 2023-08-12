@@ -1,14 +1,13 @@
 package main
 
 import (
+	"github.com/kkgo-software-engineering/workshop/cashshop"
 	"github.com/kkgo-software-engineering/workshop/fivemroutine"
 	"github.com/kkgo-software-engineering/workshop/playeridentifier"
 	"github.com/kkgo-software-engineering/workshop/playeritems"
 	"github.com/kkgo-software-engineering/workshop/playerlogin"
 	"github.com/kkgo-software-engineering/workshop/playerstats"
-	"github.com/kkgo-software-engineering/workshop/policelogs"
 	"github.com/kkgo-software-engineering/workshop/uploadimage"
-	"log"
 	"os"
 
 	"github.com/kkgo-software-engineering/workshop/playerlogs"
@@ -18,15 +17,14 @@ import (
 
 func main() {
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		log.Fatal(err)
-	}
+	logger, _ := zap.NewProduction()
 
-	if os.Getenv("policelogs") != "" {
-		logger.Info("prepare to policelogs")
-		policelogs.InitService()
-		logger.Info("Registered FiveM log service on /policelogs")
+	os.Setenv("cashshop", "true")
+
+	if os.Getenv("cashshop") != "" {
+		logger.Info("prepare to cashshop")
+		cashshop.InitService()
+		logger.Info("Registered FiveM log service on /users")
 	}
 
 	if os.Getenv("playerlogin") != "" {
@@ -67,11 +65,6 @@ func main() {
 		logger.Info("Registered FiveM service on /routine")
 	}
 	if os.Getenv("playerstats") != "" {
-		logger.Info("prepare to init routine")
-		playerstats.InitService()
-		logger.Info("Registered FiveM service on /routine")
-	}
-	if os.Getenv("cashshop") != "" {
 		logger.Info("prepare to init routine")
 		playerstats.InitService()
 		logger.Info("Registered FiveM service on /routine")
