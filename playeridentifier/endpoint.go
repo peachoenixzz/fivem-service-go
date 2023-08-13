@@ -42,7 +42,8 @@ type Response struct {
 
 func (h Handler) UpdateVIPPoint(c echo.Context) error {
 	logger := mlog.L(c)
-	req := RequestUpdateVip{}
+	//req := RequestUpdateVip{}
+	var req RequestUpdateVip
 	err := c.Bind(&req)
 	if err != nil {
 		logger.Error("bad Request Update Vip body", zap.Error(err))

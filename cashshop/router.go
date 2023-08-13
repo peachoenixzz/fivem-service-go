@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func RegRoute(cfg config.Config, logger *zap.Logger, mysqlDB *sql.DB, mongodb *mongo.Client) *echo.Echo {
+func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysqlDB *sql.DB) *echo.Echo {
 	e := echo.New()
 
 	// Middleware
@@ -32,7 +32,9 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mysqlDB *sql.DB, mongodb *m
 
 	r.Use(echojwt.WithConfig(JWTConfig))
 	///cash-shop/
-	e.GET("/users/:discordid", h.GetInitCashShopEndPoint)
+	//e.GET("/users/:discordid", h.GetInitCashShopEndPoint)
+	e.GET("/cash/:discordID", h.GetInitCashShopEndPoint)
+	e.PUT("/cash/:discordID", h.UpdateCashPointEndPoint)
 
 	return e
 }
