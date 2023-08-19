@@ -19,12 +19,12 @@ func main() {
 
 	logger, _ := zap.NewProduction()
 
-	os.Setenv("cashshop", "true")
+	//os.Setenv("cashshop", "true")
 
 	if os.Getenv("cashshop") != "" {
 		logger.Info("prepare to cashshop")
 		cashshop.InitService()
-		logger.Info("Registered FiveM log service on /users")
+		logger.Info("Registered FiveM log service on /cash-shop")
 	}
 
 	if os.Getenv("playerlogin") != "" {

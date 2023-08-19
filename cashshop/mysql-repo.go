@@ -1,6 +1,7 @@
 package cashshop
 
 import (
+	"context"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kkgo-software-engineering/workshop/config"
@@ -24,9 +25,15 @@ func New(cfgFlag config.FeatureFlag, mongoDB *mongo.Client, mysqlDB *sql.DB) *Ha
 func (h Handler) getInitCashShop(c echo.Context, discordID string) (ResponseInitCashShop, error) {
 	logger := mlog.Logg
 	query := `
-		SELECT count(u.id),u.identifier, u.firstname  , u.lastname , cp.point
+		SELECT count(u.id)
+		     ,u.identifier
+		     ,u.firstname  
+		     ,u.lastname 
+		     ,cp.point
+		     ,v.expire_date
         FROM users as u 
         INNER JOIN cash_point as cp ON u.identifier = cp.discord_id
+        INNER JOIN vip as v ON u.identifier = v.discord_id
 		WHERE u.identifier = ?
 `
 
@@ -46,7 +53,7 @@ func (h Handler) getInitCashShop(c echo.Context, discordID string) (ResponseInit
 	logger.Info("query Row Discord Id")
 	var rowCount int
 	var res ResponseInitCashShop
-	err = stmt.QueryRow(discordID).Scan(&rowCount, &res.Identifier, &res.FirstName, &res.LastName, &res.Point)
+	err = stmt.QueryRow(discordID).Scan(&rowCount, &res.Identifier, &res.FirstName, &res.LastName, &res.Point, &res.ExpireDateVip)
 	if err != nil {
 		logger.Error("query row fail ", zap.Error(err))
 		return ResponseInitCashShop{}, err
@@ -57,6 +64,99 @@ func (h Handler) getInitCashShop(c echo.Context, discordID string) (ResponseInit
 	}
 	return res, nil
 }
+
+func (h Handler) GetCashShopItem(ctx context.Context, discordID string) ([]ResponseItemCashShop, error) {
+	logger := mlog.Logg
+	logger.Info("prepare to make query Discord ID")
+	var items []ResponseItemCashShop
+	stmtStr := `
+				SELECT
+					DISTINCT ci.name AS item_name,
+					ci.point AS price,
+					ci.limit,
+					ci.limit_type,
+					CASE
+						WHEN ci.limit_type = '00' THEN ci.limit
+						WHEN ci.limit_type = '01' THEN ci.limit - COALESCE(daily_count.count, 0)
+						WHEN ci.limit_type = '02' THEN ci.limit - COALESCE(hourly_count.count, 0)
+						ELSE -1
+					END AS remaining_quantity
+				FROM
+					cash_items ci
+				LEFT JOIN cash_history ch ON ci.name = ch.item_name AND ch.discord_id = ? AND DATE(ch.created_date) = CURDATE() --1
+				LEFT JOIN (
+					SELECT
+						item_name,
+						COUNT(1) AS count
+					FROM
+						cash_history
+					WHERE
+						discord_id = ? AND DATE(created_date) = CURDATE() --2
+					GROUP BY
+						item_name
+				) AS daily_count ON ci.name = daily_count.item_name AND ci.limit_type = '01'
+				LEFT JOIN (
+					SELECT
+						item_name,
+						CASE
+							WHEN (HOUR(created_date) BETWEEN 0 AND 5) THEN '0.00 - 6.00'
+							WHEN (HOUR(created_date) BETWEEN 6 AND 11) THEN '6.00 - 12.00'
+							WHEN (HOUR(created_date) BETWEEN 12 AND 17) THEN '12.00 - 18.00'
+							WHEN (HOUR(created_date) BETWEEN 18 AND 23) THEN '18.00 - 0.00'
+						END AS time_range,
+						COUNT(1) AS count
+					FROM
+						cash_history
+					WHERE
+						discord_id = ? AND DATE(created_date) = CURDATE() --3
+					GROUP BY
+						item_name, time_range
+				) AS hourly_count ON ci.name = hourly_count.item_name AND ci.limit_type = '02' 
+					AND hourly_count.time_range = CASE
+													  WHEN HOUR(NOW()) BETWEEN 0 AND 5 THEN '0.00 - 6.00'
+													  WHEN HOUR(NOW()) BETWEEN 6 AND 11 THEN '6.00 - 12.00'
+													  WHEN HOUR(NOW()) BETWEEN 12 AND 17 THEN '12.00 - 18.00'
+													  WHEN HOUR(NOW()) BETWEEN 18 AND 23 THEN '18.00 - 0.00'
+												  END
+				ORDER BY
+					ci.name;
+				`
+
+	args := []interface{}{
+		discordID,
+		discordID,
+		discordID,
+	}
+
+	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponseItemCashShop{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	rows, err := stmt.QueryContext(ctx, args...)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponseItemCashShop{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	for rows.Next() {
+		var item ResponseItemCashShop
+		err := rows.Scan(&item.Name, &item.Point, &item.MaxLimit, &item.LimitType, &item.RemainQuantity)
+		if err != nil {
+			logger.Error("Database Error : ", zap.Error(err))
+			return []ResponseItemCashShop{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		}
+		items = append(items, item)
+	}
+
+	if err = rows.Err(); err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponseItemCashShop{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	return items, nil
+}
+
 func (h Handler) UpdateCashPoint(tx *sql.Tx, req RequestUpdatePoint, discordID string) error {
 	logger := mlog.Logg
 	logger.Info("prepare to make query Discord ID")

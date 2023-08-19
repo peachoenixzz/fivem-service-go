@@ -162,7 +162,7 @@ func (h Handler) AllMoney(ctx context.Context) error {
 		player.Bank = values["bank"]
 		player.Total = values["money"] + values["bank"]
 		player.BlackMoney = values["black_money"]
-		if (player.Money) >= 1 {
+		if (player.Money) >= 0 {
 			players = append(players, player)
 		}
 		count++
@@ -200,6 +200,10 @@ func (h Handler) AllMoney(ctx context.Context) error {
 
 	// Write the data to the Excel sheet
 	for _, player := range players {
+		fmt.Println(fmt.Sprintf("%d %s %s", player.Bank, player.FirstName, player.LastName))
+		fmt.Println(fmt.Sprintf("%d %s %s", player.Money, player.FirstName, player.LastName))
+		fmt.Println(fmt.Sprintf("%d %s %s", player.BlackMoney, player.FirstName, player.LastName))
+		fmt.Println(fmt.Sprintf("%d %s %s", player.Total, player.FirstName, player.LastName))
 		row := sheet.AddRow()
 		row.AddCell().SetValue(player.FirstName + " " + player.LastName)
 		row.AddCell().SetValue(fmt.Sprintf("%d", player.Bank))

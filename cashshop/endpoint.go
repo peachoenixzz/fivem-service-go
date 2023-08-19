@@ -1,6 +1,9 @@
 package cashshop
 
 import (
+	"context"
+	"github.com/golang-jwt/jwt/v4"
+	mw "github.com/kkgo-software-engineering/workshop/middleware"
 	//"fmt"
 	//"github.com/golang-jwt/jwt/v4"
 	//mw "github.com/kkgo-software-engineering/workshop/middleware"
@@ -16,13 +19,22 @@ type Message struct {
 }
 
 type ResponseInitCashShop struct {
-	Identifier string `json:"identifier"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	Point      string `json:"point"`
+	Identifier    string `json:"identifier"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	Point         string `json:"point"`
+	ExpireDateVip string `json:"expire_date_vip"`
 }
 
 type Request struct {
+}
+
+type ResponseItemCashShop struct {
+	LimitType      string `json:"limit_type"`
+	Name           string `json:"item_name"`
+	MaxLimit       int64  `json:"max_limit"`
+	Point          int64  `json:"point"`
+	RemainQuantity int64  `json:"remaining_quantity"`
 }
 
 type RequestUpdatePoint struct {
@@ -33,18 +45,27 @@ type RequestUpdatePoint struct {
 
 func (h Handler) GetInitCashShopEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
-	discordID := c.Param("discordID")
-	//user := c.Get("user").(*jwt.Token)
-	//playerInfo := user.Claims.(*mw.JwtCustomClaims)
-	//fmt.Println("JOB", playerInfo.Job)
-	//fmt.Println("identifier", playerInfo.Identifier)
-	//fmt.Println("group", playerInfo.Group)
-	res, err := h.getInitCashShop(c, discordID)
+	user := c.Get("user").(*jwt.Token)
+	playerInfo := user.Claims.(*mw.JwtCustomClaims)
+	res, err := h.getInitCashShop(c, playerInfo.Identifier)
 	if err != nil {
 		logger.Error("got error when query DB : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
 	}
 	logger.Info("get result successfully")
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h Handler) GetCashShopItemEndPoint(c echo.Context) error {
+	logger := mlog.L(c)
+	user := c.Get("user").(*jwt.Token)
+	playerInfo := user.Claims.(*mw.JwtCustomClaims)
+	res, err := h.GetCashShopItem(context.Background(), playerInfo.Identifier)
+	if err != nil {
+		logger.Error("got error when query DB : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
+	}
+	logger.Info("get result item cash shop successfully")
 	return c.JSON(http.StatusOK, res)
 }
 
