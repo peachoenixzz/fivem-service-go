@@ -21,7 +21,6 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 	h := New(cfg.FeatureFlag, mongodb, mysqlDB)
-	//r := e.Group("/")
 
 	JWTConfig := echojwt.Config{
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
@@ -31,7 +30,6 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	}
 	e.Use(echojwt.WithConfig(JWTConfig))
 	///cash-shop/
-	//e.GET("/users/:discordid", h.GetInitCashShopEndPoint)
 	e.GET("/users", h.GetInitCashShopEndPoint)
 	e.GET("/users/items", h.GetCashShopItemEndPoint)
 	e.PUT("/users/buy", h.BuyCashShopEndPoint)

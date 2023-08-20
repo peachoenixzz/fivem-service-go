@@ -22,7 +22,7 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	// Login route
 	e.GET("/discord/id/:discordID", h.GetPlayerDiscordID)
 	e.PUT("/discord/id/:discordID", h.UpdateVIPPoint)
-	e.PUT("/users", h.UpdateCashPointEndPoint)
+	e.PUT("/cash", h.UpdateCashPointEndPoint)
 
 	return e
 }

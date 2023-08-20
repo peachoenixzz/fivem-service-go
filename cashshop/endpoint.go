@@ -42,9 +42,11 @@ type ResponseItemCashShop struct {
 type ResponseValidateItem struct {
 	LimitType      string `json:"limit_type"`
 	Name           string `json:"item_name"`
+	Category       string `json:"category"`
 	MaxLimit       int64  `json:"max_limit"`
 	Point          int64  `json:"point"`
 	RemainQuantity int64  `json:"remaining_quantity"`
+	ExpireDateItem int    `json:"expire_date_item"`
 }
 
 func (h Handler) GetInitCashShopEndPoint(c echo.Context) error {
@@ -96,7 +98,8 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 		logger.Error("Failed to Update record:", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
 	}
-	logger.Info(fmt.Sprintf("Name : %v Point : %v Limit : %v Type : %v Remain : %v", res.Name, res.Point, res.MaxLimit, res.LimitType, res.RemainQuantity))
+
+	logger.Info(fmt.Sprintf("Name : %v Point : %v Limit : %v Type : %v Remain : %v Expire : %v Category : %v", res.Name, res.Point, res.MaxLimit, res.LimitType, res.RemainQuantity, res.ExpireDateItem, res.Category))
 	if HandleLimitType(res) {
 		logger.Info("prepare PurchaseItem")
 		count, err := h.PurchaseItem(tx, req, playerInfo.Identifier)
@@ -105,14 +108,34 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 			logger.Error("Failed to Update record:", zap.Error(err))
 			return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
 		}
-		if count > 0 {
 
+		if count > 0 {
+			if HandleDateExpire(res.ExpireDateItem) {
+				err = h.InsertExpireDateItem(tx, res, playerInfo.Identifier)
+				if err != nil {
+					tx.Rollback()
+					logger.Error("Failed to Update record:", zap.Error(err))
+					return c.JSON(http.StatusOK, Message{Message: "fail"})
+				}
+			}
+			err = h.InsertHistoryPurchaseItem(tx, res, playerInfo.Identifier)
+			if err != nil {
+				tx.Rollback()
+				logger.Error("Failed to Update record:", zap.Error(err))
+				return c.JSON(http.StatusOK, Message{Message: "fail"})
+			}
+			err = h.InsertGivePlayerItem(tx, res, playerInfo.Identifier)
+			if err != nil {
+				tx.Rollback()
+				logger.Error("Failed to Update record:", zap.Error(err))
+				return c.JSON(http.StatusOK, Message{Message: "fail"})
+			}
 		}
 
 		logger.Info(fmt.Sprintf("update Count : %v", count))
 		ms := HandleMessage(count)
 		if ms.Message == "success" {
-			logger.Info("prepare PurchaseItem Success")
+			logger.Info("PurchaseItem Success")
 			tx.Commit()
 			return c.JSON(http.StatusOK, ms)
 		}

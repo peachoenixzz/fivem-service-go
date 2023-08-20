@@ -21,12 +21,6 @@ func main() {
 
 	os.Setenv("cashshop", "true")
 
-	if os.Getenv("cashshop") != "" {
-		logger.Info("prepare to cashshop")
-		cashshop.InitService()
-		logger.Info("Registered FiveM log service on /cash-shop")
-	}
-
 	if os.Getenv("playerlogin") != "" {
 		logger.Info("prepare to playerlogin")
 		playerlogin.InitService()
@@ -64,10 +58,17 @@ func main() {
 		fivemroutine.InitService()
 		logger.Info("Registered FiveM service on /routine")
 	}
+
 	if os.Getenv("playerstats") != "" {
 		logger.Info("prepare to init routine")
 		playerstats.InitService()
 		logger.Info("Registered FiveM service on /routine")
+	}
+
+	if os.Getenv("cashshop") != "" {
+		logger.Info("prepare to cashshop")
+		cashshop.InitService()
+		logger.Info("Registered FiveM log service on /cash-shop")
 	}
 
 	logger.Info("Register service fail")

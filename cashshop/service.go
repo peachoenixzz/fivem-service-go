@@ -15,3 +15,10 @@ func HandleMessage(count int64) Message {
 	}
 	return Message{"fail"}
 }
+
+func HandleDateExpire(ex int) bool {
+	if ex > 0 {
+		return true
+	}
+	return false
+}
