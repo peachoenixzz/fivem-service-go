@@ -7,6 +7,7 @@ import (
 	"github.com/kkgo-software-engineering/workshop/playeritems"
 	"github.com/kkgo-software-engineering/workshop/playerlogin"
 	"github.com/kkgo-software-engineering/workshop/playerstats"
+	"github.com/kkgo-software-engineering/workshop/policelogs"
 	"github.com/kkgo-software-engineering/workshop/uploadimage"
 	"os"
 
@@ -19,7 +20,7 @@ func main() {
 
 	logger, _ := zap.NewProduction()
 
-	os.Setenv("cashshop", "true")
+	//os.Setenv("cashshop", "true")
 
 	if os.Getenv("playerlogin") != "" {
 		logger.Info("prepare to playerlogin")
@@ -33,6 +34,12 @@ func main() {
 		logger.Info("prepare to playerlogs")
 		playerlogs.InitService()
 		logger.Info("Registered FiveM log service on /playerlogs")
+	}
+
+	if os.Getenv("policelogs") != "" {
+		logger.Info("prepare to policelogs")
+		policelogs.InitService()
+		logger.Info("Registered FiveM log service on /policelogs")
 	}
 
 	if os.Getenv("uploadimages") != "" {

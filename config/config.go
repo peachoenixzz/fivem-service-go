@@ -47,7 +47,7 @@ const (
 	//mongoDBConnection = "mongodb://localhost:27017" //mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs
 	//mySQLDBConnection = "peachoenixz:petuyio001@tcp(103.212.181.194:3306)/es_extended_feature"
 	mySQLDBConnection = "doraemonfivem:Doraemon001FiveM@tcp(103.212.181.194:3306)/es_extended"
-	mongoDBConnection = "mongodb://fivemlogs:isylzjkoshkm001@localhost/fivem-logs" //mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs
+	mongoDBConnection = "mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs" //mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs
 	//mySQLDBConnection = "doraemonfivem:Doraemon001FiveM@tcp(localhost:3306)/"
 )
 
