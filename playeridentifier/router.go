@@ -22,14 +22,7 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	// Login route
 	e.GET("/discord/id/:discordID", h.GetPlayerDiscordID)
 	e.PUT("/discord/id/:discordID", h.UpdateVIPPoint)
-	//r.GET("auth", mw.Restricted)
-	//hFiveMLog := New(cfg.FeatureFlag, postgresDB, mongodb)
-
-	//r.POST("/", hFiveMLog.AddPoliceLogEndPoint)
-	//e.GET("/", hFiveMLog.GetFiveMLogEndPoint)
-	//e.GET("/steamid/:steamid/events/:event", hFiveMLog.CaseEventAndSteamIDEndPoint)
-	//e.GET("/policelogs/steamid/:steamid/events", hFiveMLog.AllEventAndSteamIDEndPoint)
-	//e.GET("/policelogs/events/:event", hFiveMLog.ByEventEndPoint)
+	e.PUT("/users", h.UpdateCashPointEndPoint)
 
 	return e
 }

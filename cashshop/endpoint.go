@@ -27,7 +27,7 @@ type ResponseInitCashShop struct {
 }
 
 type RequestBuyItem struct {
-	Name string `json:"Name"`
+	Name string `json:"name"`
 }
 
 type ResponseItemCashShop struct {
@@ -44,12 +44,6 @@ type ResponseValidateItem struct {
 	MaxLimit       int64  `json:"max_limit"`
 	Point          int64  `json:"point"`
 	RemainQuantity int64  `json:"remaining_quantity"`
-}
-
-type RequestUpdatePoint struct {
-	Identifier string `json:"identifier"`
-	DiscordID  string `json:"discord_id"`
-	CashPoint  int64  `json:"cashPoint"`
 }
 
 func (h Handler) GetInitCashShopEndPoint(c echo.Context) error {
@@ -110,6 +104,10 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 			logger.Error("Failed to Update record:", zap.Error(err))
 			return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
 		}
+		if count > 0 {
+
+		}
+
 		logger.Info(fmt.Sprintf("update Count : %v", count))
 		ms := HandleMessage(count)
 		if ms.Message == "success" {
@@ -122,38 +120,4 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 	}
 	tx.Rollback()
 	return c.JSON(http.StatusOK, Message{Message: "fail"})
-}
-
-func (h Handler) UpdateCashPointEndPoint(c echo.Context) error {
-	logger := mlog.Logg
-	discordID := c.Param("discordID")
-	var req RequestUpdatePoint
-	err := c.Bind(&req)
-	if err != nil {
-		logger.Error("Failed to bind request:", zap.Error(err))
-		return echo.NewHTTPError(http.StatusBadRequest, "Failed to bind request")
-	}
-
-	tx, err := h.MysqlDB.Begin()
-	if err != nil {
-		logger.Error("Failed to Update record:", zap.Error(err))
-		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
-	}
-
-	err = h.UpdateCashPoint(tx, req, discordID)
-	if err != nil {
-		tx.Rollback()
-		logger.Error("Failed to Update record:", zap.Error(err))
-		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		logger.Error("Database Err:", zap.Error(err))
-		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
-	}
-
-	return c.JSON(http.StatusOK, Message{Message: "Update Cash Point Successfully"})
-
 }

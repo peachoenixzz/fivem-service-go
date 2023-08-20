@@ -35,6 +35,5 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	e.GET("/users", h.GetInitCashShopEndPoint)
 	e.GET("/users/items", h.GetCashShopItemEndPoint)
 	e.PUT("/users/buy", h.BuyCashShopEndPoint)
-	e.PUT("/users", h.UpdateCashPointEndPoint)
 	return e
 }
