@@ -80,9 +80,11 @@ func (h Handler) GetCashShopItem(ctx context.Context, discordID string) ([]Respo
 						WHEN ci.limit_type = '01' THEN ci.limit - COALESCE(daily_count.count, 0)
 						WHEN ci.limit_type = '02' THEN ci.limit - COALESCE(hourly_count.count, 0)
 						ELSE -1
-					END AS remaining_quantity
+					END AS remaining_quantity,
+				    i.label as label_name
 				FROM
-					cash_items ci
+				items i 
+				INNER JOIN cash_items ci ON i.name = ci.name
 				LEFT JOIN cash_history ch ON ci.name = ch.item_name AND ch.discord_id = ? AND DATE(ch.created_date) = CURDATE() --1
 				LEFT JOIN (
 					SELECT
@@ -119,8 +121,7 @@ func (h Handler) GetCashShopItem(ctx context.Context, discordID string) ([]Respo
 													  WHEN HOUR(NOW()) BETWEEN 18 AND 23 THEN '18.00 - 0.00'
 												  END
 				ORDER BY
-					ci.name;
-				`
+					ci.name`
 
 	args := []interface{}{
 		discordID,
@@ -142,7 +143,7 @@ func (h Handler) GetCashShopItem(ctx context.Context, discordID string) ([]Respo
 
 	for rows.Next() {
 		var item ResponseItemCashShop
-		err := rows.Scan(&item.Name, &item.Point, &item.MaxLimit, &item.LimitType, &item.RemainQuantity)
+		err := rows.Scan(&item.Name, &item.Point, &item.MaxLimit, &item.LimitType, &item.RemainQuantity, &item.LabelName)
 		if err != nil {
 			logger.Error("Database Error : ", zap.Error(err))
 			return []ResponseItemCashShop{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())

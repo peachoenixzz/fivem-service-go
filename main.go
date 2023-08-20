@@ -19,7 +19,7 @@ func main() {
 
 	logger, _ := zap.NewProduction()
 
-	//os.Setenv("cashshop", "true")
+	os.Setenv("cashshop", "true")
 
 	if os.Getenv("cashshop") != "" {
 		logger.Info("prepare to cashshop")

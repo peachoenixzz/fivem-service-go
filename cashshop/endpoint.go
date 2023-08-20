@@ -27,12 +27,13 @@ type ResponseInitCashShop struct {
 }
 
 type RequestBuyItem struct {
-	Name string `json:"Name"`
+	Name string `json:"name"`
 }
 
 type ResponseItemCashShop struct {
 	LimitType      string `json:"limit_type"`
 	Name           string `json:"item_name"`
+	LabelName      string `json:"label_name"`
 	MaxLimit       int64  `json:"max_limit"`
 	Point          int64  `json:"point"`
 	RemainQuantity int64  `json:"remaining_quantity"`
