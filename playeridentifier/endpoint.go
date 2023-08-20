@@ -18,6 +18,12 @@ type Item struct {
 	ExpireDate int    `json:"expire_date"`
 }
 
+type RequestUpdatePoint struct {
+	Identifier string `json:"identifier"`
+	DiscordID  string `json:"discord_id"`
+	CashPoint  int64  `json:"cashPoint"`
+}
+
 type RequestUpdateVip struct {
 	DiscordID      string `json:"discord_id"`
 	Priority       string `json:"priority"`
@@ -106,4 +112,38 @@ func (h Handler) GetPlayerDiscordID(c echo.Context) error {
 
 	logger.Info("get result successfully")
 	return c.JSON(http.StatusOK, res)
+}
+
+func (h Handler) UpdateCashPointEndPoint(c echo.Context) error {
+	logger := mlog.Logg
+	discordID := c.Param("discordID")
+	var req RequestUpdatePoint
+	err := c.Bind(&req)
+	if err != nil {
+		logger.Error("Failed to bind request:", zap.Error(err))
+		return echo.NewHTTPError(http.StatusBadRequest, "Failed to bind request")
+	}
+
+	tx, err := h.MysqlDB.Begin()
+	if err != nil {
+		logger.Error("Failed to Update record:", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
+	}
+
+	err = h.UpdateCashPoint(tx, req, discordID)
+	if err != nil {
+		tx.Rollback()
+		logger.Error("Failed to Update record:", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		logger.Error("Database Err:", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
+	}
+
+	return c.JSON(http.StatusOK, Message{Message: "Update Cash Point Successfully"})
+
 }

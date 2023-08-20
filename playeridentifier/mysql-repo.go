@@ -189,3 +189,36 @@ func (h Handler) QueryPlayerDiscord(c echo.Context, discordID string) (Response,
 	}
 	return res, nil
 }
+
+func (h Handler) UpdateCashPoint(tx *sql.Tx, req RequestUpdatePoint, discordID string) error {
+	logger := mlog.Logg
+	logger.Info("prepare to make query Discord ID")
+	stmtStr := `
+	UPDATE cash_point 
+		SET 
+			point = point + ?
+		WHERE
+			discord_id = ?
+`
+
+	args := []interface{}{
+		req.CashPoint,
+		discordID,
+	}
+	r, err := tx.Exec(stmtStr, args...)
+	if err != nil {
+		// If there is an error, rollback the transaction
+		tx.Rollback()
+		logger.Error("Failed to Update record:", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	rowsAffected, err := r.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		logger.Error("Failed to retrieve affected rows: ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	logger.Info("Row Affected Update vip table", zap.Int64("row affected", rowsAffected))
+	return nil
+}
