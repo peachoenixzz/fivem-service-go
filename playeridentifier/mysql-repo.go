@@ -179,7 +179,7 @@ WHERE vip.discord_id = ?;
 	var res Response
 	err = stmt.QueryRow(discordID).Scan(&rowCount, &res.DiscordID, &res.SteamID,
 		&res.VipPoint, &res.ExtraPoint, &res.PermanentPoint, &res.Priority, &res.Identifier, &res.ExpireDate,
-		&res.LastUpdated)
+		&res.LastUpdated, &res.Point)
 	if err != nil {
 		logger.Error("query row fail ", zap.Error(err))
 		return Response{}, err

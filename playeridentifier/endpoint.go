@@ -44,6 +44,7 @@ type Response struct {
 	VipPoint       int64  `json:"vip_point"`
 	ExtraPoint     int64  `json:"extra_point"`
 	PermanentPoint int64  `json:"permanent_point"`
+	Point          int64  `json:"point"`
 }
 
 func (h Handler) UpdateVIPPoint(c echo.Context) error {
