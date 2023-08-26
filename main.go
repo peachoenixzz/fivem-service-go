@@ -6,6 +6,7 @@ import (
 	"github.com/kkgo-software-engineering/workshop/playeridentifier"
 	"github.com/kkgo-software-engineering/workshop/playeritems"
 	"github.com/kkgo-software-engineering/workshop/playerlogin"
+	"github.com/kkgo-software-engineering/workshop/playerquest"
 	"github.com/kkgo-software-engineering/workshop/playerstats"
 	"github.com/kkgo-software-engineering/workshop/policelogs"
 	"github.com/kkgo-software-engineering/workshop/uploadimage"
@@ -17,17 +18,20 @@ import (
 )
 
 func main() {
-
 	logger, _ := zap.NewProduction()
 
 	//os.Setenv("cashshop", "true")
+	if os.Getenv("quest") != "" {
+		logger.Info("prepare to quest")
+		playerquest.InitService()
+		logger.Info("Registered FiveM log service on /quest")
+	}
 
 	if os.Getenv("playerlogin") != "" {
 		logger.Info("prepare to playerlogin")
 		playerlogin.InitService()
 		logger.Info("Registered FiveM log service on /playerlogin")
 	}
-
 	//fmt.Println(os.Getenv("playerlogs"))
 	// Register the FiveM log service if enabled
 	if os.Getenv("playerlogs") != "" {

@@ -191,7 +191,7 @@ WHERE vip.discord_id = ?;
 	return res, nil
 }
 
-func (h Handler) UpdateCashPoint(tx *sql.Tx, req RequestUpdatePoint, discordID string) error {
+func (h Handler) UpdateCashPoint(tx *sql.Tx, req RequestUpdatePoint) error {
 	logger := mlog.Logg
 	logger.Info("prepare to make query Discord ID")
 	stmtStr := `
@@ -204,7 +204,7 @@ func (h Handler) UpdateCashPoint(tx *sql.Tx, req RequestUpdatePoint, discordID s
 
 	args := []interface{}{
 		req.CashPoint,
-		discordID,
+		req.DiscordID,
 	}
 	r, err := tx.Exec(stmtStr, args...)
 	if err != nil {
@@ -220,6 +220,6 @@ func (h Handler) UpdateCashPoint(tx *sql.Tx, req RequestUpdatePoint, discordID s
 		logger.Error("Failed to retrieve affected rows: ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
-	logger.Info("Row Affected Update vip table", zap.Int64("row affected", rowsAffected))
+	logger.Info("Row Affected Update cash point table", zap.Int64("row affected", rowsAffected))
 	return nil
 }

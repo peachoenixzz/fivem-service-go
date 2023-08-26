@@ -117,7 +117,6 @@ func (h Handler) GetPlayerDiscordID(c echo.Context) error {
 
 func (h Handler) UpdateCashPointEndPoint(c echo.Context) error {
 	logger := mlog.Logg
-	discordID := c.Param("discordID")
 	var req RequestUpdatePoint
 	err := c.Bind(&req)
 	if err != nil {
@@ -131,7 +130,7 @@ func (h Handler) UpdateCashPointEndPoint(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
 	}
 
-	err = h.UpdateCashPoint(tx, req, discordID)
+	err = h.UpdateCashPoint(tx, req)
 	if err != nil {
 		tx.Rollback()
 		logger.Error("Failed to Update record:", zap.Error(err))
