@@ -16,7 +16,8 @@ type Message struct {
 
 type ResponseRequireQuestPlayer struct {
 	Quantity    int64 `json:"quantity"`
-	WeightLevel int64 `json:"weightlevel"`
+	WeightLevel int64 `json:"weight_level"`
+	CardAItem   int   `json:"card_a_item"`
 }
 
 type ResponseQuestItem struct {
@@ -53,6 +54,12 @@ func (h Handler) GetRequireQuestPlayer(c echo.Context) error {
 		logger.Error("got error when query DB : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
 	}
+	pi, err := h.QueryPlayerItem(context.Background(), playerInfo.Identifier)
+	if err != nil {
+		logger.Error("got error when query DB : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
+	}
+	res = handleCardAItem(&res, pi)
 	logger.Info("get result successfully")
 	return c.JSON(http.StatusOK, res)
 }
@@ -61,7 +68,6 @@ func (h Handler) GetStatusQuest(c echo.Context) error {
 	logger := mlog.L(c)
 	user := c.Get("user").(*jwt.Token)
 	playerInfo := user.Claims.(*mw.JwtCustomClaims)
-
 	if h.GetStateQuest(context.Background(), playerInfo.Identifier) {
 		logger.Info("player not ready get quest ")
 		return c.JSON(http.StatusOK, Message{Message: "not_ready_quest"})
