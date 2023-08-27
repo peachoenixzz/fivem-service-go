@@ -6,6 +6,22 @@ import (
 	"time"
 )
 
+func handleCardAItem(res *ResponseRequireQuestPlayer, pi map[string]int) ResponseRequireQuestPlayer {
+	questAValue, found := pi["quest_a"]
+	if found {
+		res = &ResponseRequireQuestPlayer{
+			CardAItem: questAValue,
+		}
+	}
+
+	if !found {
+		res = &ResponseRequireQuestPlayer{
+			CardAItem: 0,
+		}
+	}
+	return *res
+}
+
 func handleQuestItem(res []ResponseQuestItem) []ResponseSelectedItem {
 	secureRand := rand.New(rand.NewSource(time.Now().UnixNano()))
 
