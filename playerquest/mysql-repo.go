@@ -2,13 +2,18 @@ package playerquest
 
 import (
 	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kkgo-software-engineering/workshop/config"
 	"github.com/kkgo-software-engineering/workshop/mlog"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
+	"golang.org/x/net/context"
 	"net/http"
+	"time"
 )
 
 type Handler struct {
@@ -24,7 +29,7 @@ func New(cfgFlag config.FeatureFlag, mongoDB *mongo.Client, mysqlDB *sql.DB) *Ha
 func (h Handler) QueryRequireQuest(c echo.Context, discordID string) (ResponseRequireQuestPlayer, error) {
 	logger := mlog.Logg
 	query := `
-		SELECT count(tpw.discord_id),tlw.require , tpw.weight_level
+		SELECT count(tpw.discord_id),tlw.quantity , tpw.weight_level
               FROM TB_PLAYER_WEIGHT tpw
               INNER JOIN TB_LEVEL_WEIGHT tlw
  			  WHERE tlw.weight_level = tpw.weight_level +1 
@@ -47,7 +52,7 @@ func (h Handler) QueryRequireQuest(c echo.Context, discordID string) (ResponseRe
 	logger.Info("query Row Discord Id")
 	var rowCount int
 	var res ResponseRequireQuestPlayer
-	err = stmt.QueryRow(discordID).Scan(&rowCount, &res.Require, &res.WeightLevel)
+	err = stmt.QueryRow(discordID).Scan(&rowCount, &res.Quantity, &res.WeightLevel)
 	if err != nil {
 		logger.Error("query row fail ", zap.Error(err))
 		return ResponseRequireQuestPlayer{}, err
@@ -57,4 +62,215 @@ func (h Handler) QueryRequireQuest(c echo.Context, discordID string) (ResponseRe
 		return ResponseRequireQuestPlayer{}, c.JSON(http.StatusNotFound, Message{Message: "not found discord id"})
 	}
 	return res, nil
+}
+
+func (h Handler) QueryQuestItem(ctx context.Context) ([]ResponseQuestItem, error) {
+	logger := mlog.Logg
+	logger.Info("prepare to make query Discord ID")
+	var items []ResponseQuestItem
+	stmtStr := `SELECT name,rare FROM TB_ITEM_QUEST`
+
+	//args := []interface{}{
+	//	discordID,
+	//	discordID,
+	//	discordID,
+	//}
+
+	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponseQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponseQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	for rows.Next() {
+		var item ResponseQuestItem
+		err := rows.Scan(&item.Name, &item.Rare)
+		if err != nil {
+			logger.Error("Database Error : ", zap.Error(err))
+			return []ResponseQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		}
+		items = append(items, item)
+	}
+
+	if err = rows.Err(); err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponseQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	return items, nil
+}
+
+func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) ([]PlayerItems, error) {
+	logger := mlog.Logg
+	stmtStr := "SELECT inventory FROM users u WHERE u.identifier = ?"
+	logger.Info("mysql prepare query Discord ID")
+	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
+	if err != nil {
+		logger.Error("sql error", zap.Error(err))
+		return []PlayerItems{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	logger.Info("query Row Discord Id")
+	var itemStr string
+	err = stmt.QueryRow(discordID).Scan(&itemStr)
+	if err != nil {
+		logger.Error("query row fail ", zap.Error(err))
+		return []PlayerItems{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	logger.Info("after query row and ready to return Data")
+
+	var items []PlayerItems
+	if err := json.Unmarshal([]byte(itemStr), &items); err != nil {
+		logger.Error("Failed to parse JSON item data:", zap.Error(err))
+		return []PlayerItems{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	return items, nil
+}
+
+func (h Handler) InsertSelectQuestItem(rsi []ResponseSelectedItem, discordID string) {
+	logger := mlog.Logg
+	logger.Info("prepare to make query Insert Quest Player")
+	for _, item := range rsi {
+		args := []interface{}{
+			discordID,
+			item.Name,
+			item.Quantity,
+		}
+		stmtStr := "INSERT INTO TB_PLAYER_QUEST (discord_id, name, quantity) VALUES (?, ?, ? );"
+		_, err := h.MysqlDB.Exec(stmtStr, args...)
+		if err != nil {
+			logger.Error("failed to insert quest item into database:", zap.Error(err))
+		}
+	}
+	logger.Info("success Insert Quest Player")
+}
+
+func (h Handler) GetPlayerQuestItem(ctx context.Context, discordID string) ([]ResponsePlayerQuestItem, error) {
+	logger := mlog.Logg
+	var items []ResponsePlayerQuestItem
+	stmtStr := `
+			SELECT 
+				name,
+				quantity
+			FROM (
+				SELECT 
+					discord_id,
+					CASE
+						WHEN (HOUR(created_date) BETWEEN 0 AND 5) THEN '0.00 - 6.00'
+						WHEN (HOUR(created_date) BETWEEN 6 AND 11) THEN '6.00 - 12.00'
+						WHEN (HOUR(created_date) BETWEEN 12 AND 17) THEN '12.00 - 18.00'
+						WHEN (HOUR(created_date) BETWEEN 18 AND 23) THEN '18.00 - 0.00'
+					END AS time_range,
+					name,
+					quantity,
+					CASE
+						WHEN COUNT(*) OVER (PARTITION BY discord_id, time_range) > 1 THEN 'already'
+						ELSE 'none'
+					END AS status
+				FROM TB_PLAYER_QUEST
+				WHERE discord_id = ?
+				AND DATE(created_date) = CURDATE()
+				AND status = 'in_progress'
+			) AS subquery
+			WHERE subquery.time_range = CASE
+										  WHEN HOUR(NOW()) BETWEEN 0 AND 5 THEN '0.00 - 6.00'
+										  WHEN HOUR(NOW()) BETWEEN 6 AND 11 THEN '6.00 - 12.00'
+										  WHEN HOUR(NOW()) BETWEEN 12 AND 17 THEN '12.00 - 18.00'
+										  WHEN HOUR(NOW()) BETWEEN 18 AND 23 THEN '18.00 - 0.00'
+									   END
+			ORDER BY discord_id, time_range, name;`
+
+	logger.Info("mysql prepare query Discord ID")
+	args := []interface{}{
+		discordID,
+	}
+
+	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponsePlayerQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	rows, err := stmt.QueryContext(ctx, args...)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponsePlayerQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	for rows.Next() {
+		var item ResponsePlayerQuestItem
+		err := rows.Scan(&item.Name, &item.Quantity)
+		if err != nil {
+			logger.Error("Database Error : ", zap.Error(err))
+			return []ResponsePlayerQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		}
+		items = append(items, item)
+	}
+
+	if err = rows.Err(); err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponsePlayerQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	return items, nil
+}
+
+func (h Handler) GetStateQuest(ctx context.Context, discordID string) bool {
+	logger := mlog.Logg
+	logger.Info("prepare to make query check already get Quest Player")
+	stmtStr := `SELECT
+				count(discord_id) as rowCount
+			FROM (
+				SELECT
+			discord_id,
+			CASE
+				WHEN HOUR(created_date) >= 0 AND HOUR(created_date) < 6 THEN "0.00 - 6.00"
+				WHEN HOUR(created_date) >= 6 AND HOUR(created_date) < 12 THEN "6.00 - 12.00"
+				WHEN HOUR(created_date) >= 12 AND HOUR(created_date) < 18 THEN "12.00 - 18.00"
+				ELSE '18.00 - 0.00'
+			END AS time_range,
+			CASE
+				WHEN COUNT(id) > 1 THEN 'already'
+				ELSE 'none'
+			END AS status
+			FROM TB_PLAYER_QUEST
+			WHERE discord_id = ?
+			AND DATE(created_date) = CURDATE()
+			AND status = 'in_progress'
+			GROUP BY discord_id, time_range
+			) AS subquery
+			WHERE subquery.time_range = 
+			CASE
+				WHEN HOUR(NOW()) BETWEEN 0 AND 5 THEN "0.00 - 6.00"
+				WHEN HOUR(NOW()) BETWEEN 6 AND 11 THEN "6.00 - 12.00"
+				WHEN HOUR(NOW()) BETWEEN 12 AND 17 THEN "12.00 - 18.00"
+				WHEN HOUR(NOW()) BETWEEN 18 AND 23 THEN "18.00 - 0.00"
+			END
+			GROUP BY discord_id, time_range
+			ORDER BY discord_id, time_range`
+
+	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
+	if err != nil {
+		logger.Error("sql error", zap.Error(err))
+		return false
+	}
+
+	logger.Info("query player quest")
+	var rowCount int
+	err = stmt.QueryRow(discordID).Scan(&rowCount)
+	if errors.Is(err, sql.ErrNoRows) {
+		logger.Info(fmt.Sprintf("player none quest in this time : %v", time.Now()))
+		return true
+	}
+	if err != nil {
+		logger.Error("query row fail ", zap.Error(err))
+		return false
+	}
+	logger.Info("after query row and ready to return Data")
+	logger.Info(fmt.Sprintf("player have quest in this time : %v", time.Now()))
+	return false
 }

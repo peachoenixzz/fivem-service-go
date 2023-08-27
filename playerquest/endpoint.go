@@ -6,6 +6,7 @@ import (
 	"github.com/kkgo-software-engineering/workshop/mlog"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+	"golang.org/x/net/context"
 	"net/http"
 )
 
@@ -13,25 +14,34 @@ type Message struct {
 	Message interface{}
 }
 
-type ResponseValidateItem struct {
-	LimitType      string `json:"limit_type"`
-	Name           string `json:"item_name"`
-	Category       string `json:"category"`
-	MaxLimit       int64  `json:"max_limit"`
-	Point          int64  `json:"point"`
-	RemainQuantity int64  `json:"remaining_quantity"`
-	ExpireDateItem int    `json:"expire_date_item"`
-}
-
 type ResponseRequireQuestPlayer struct {
-	Require     int64 `json:"require"`
+	Quantity    int64 `json:"quantity"`
 	WeightLevel int64 `json:"weightlevel"`
 }
 
-// func (h Handler) CreateQuestPlayer(c echo.Context) error {
-//
-//		return c.JSON(http.StatusOK, res)
-//	}
+type PlayerItems map[string]interface{}
+
+type ResponseQuestItem struct {
+	Name string
+	Rare string
+}
+
+type ResponseItemComparison struct {
+	ItemName   string `json:"item_name"`
+	Comparison string `json:"comparison"`
+}
+
+type ResponseSelectedItem struct {
+	Name     string
+	Rare     string
+	Quantity int64
+}
+
+type ResponsePlayerQuestItem struct {
+	Name     string
+	Quantity int64
+}
+
 func (h Handler) GetRequireQuestPlayer(c echo.Context) error {
 	logger := mlog.L(c)
 	user := c.Get("user").(*jwt.Token)
@@ -43,4 +53,44 @@ func (h Handler) GetRequireQuestPlayer(c echo.Context) error {
 	}
 	logger.Info("get result successfully")
 	return c.JSON(http.StatusOK, res)
+}
+
+func (h Handler) CreateQuestPlayer(c echo.Context) error {
+	logger := mlog.L(c)
+	user := c.Get("user").(*jwt.Token)
+	playerInfo := user.Claims.(*mw.JwtCustomClaims)
+	rqi, err := h.QueryQuestItem(context.Background())
+	if err != nil {
+		logger.Error("got error when query DB : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
+	}
+
+	if h.GetStateQuest(context.Background(), playerInfo.Identifier) {
+		rsi := handleQuestItem(rqi)
+		h.InsertSelectQuestItem(rsi, playerInfo.Identifier)
+		logger.Info("player get quest success")
+		return c.JSON(http.StatusOK, "success")
+	}
+
+	logger.Info("player already get quest")
+	return c.JSON(http.StatusOK, "failed")
+}
+
+func (h Handler) GetComparePlayerItemAndQuestItem(c echo.Context) error {
+	logger := mlog.L(c)
+	user := c.Get("user").(*jwt.Token)
+	playerInfo := user.Claims.(*mw.JwtCustomClaims)
+	pi, err := h.QueryPlayerItem(context.Background(), playerInfo.Identifier)
+	if err != nil {
+		logger.Error("got error when query DB : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
+	}
+	rpqi, err := h.GetPlayerQuestItem(context.Background(), playerInfo.Identifier)
+	if err != nil {
+		logger.Error("got error when query DB : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
+	}
+	handleComparePlayerAndQuestItem(pi, rpqi)
+	logger.Info("get result successfully")
+	return c.JSON(http.StatusOK, "eiei")
 }
