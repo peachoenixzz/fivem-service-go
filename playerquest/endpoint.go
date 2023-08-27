@@ -57,14 +57,22 @@ func (h Handler) GetRequireQuestPlayer(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func (h Handler) GetStatusQuest(c echo.Context) error {
+	logger := mlog.L(c)
+	user := c.Get("user").(*jwt.Token)
+	playerInfo := user.Claims.(*mw.JwtCustomClaims)
+
+	if h.GetStateQuest(context.Background(), playerInfo.Identifier) {
+		logger.Info("player not ready get quest ")
+		return c.JSON(http.StatusOK, Message{Message: "not_ready_quest"})
+	}
+
+	logger.Info("player already get quest")
+	return c.JSON(http.StatusOK, Message{Message: "already_quest"})
+}
+
 func (h Handler) ResetQuestPlayer(c echo.Context) error {
 	logger := mlog.Logg
-	//var req RequestUpdatePoint
-	//err := c.Bind(&req)
-	//if err != nil {
-	//	logger.Error("Failed to bind request:", zap.Error(err))
-	//	return echo.NewHTTPError(http.StatusBadRequest, "Failed to bind request")
-	//}
 	user := c.Get("user").(*jwt.Token)
 	playerInfo := user.Claims.(*mw.JwtCustomClaims)
 
@@ -106,11 +114,11 @@ func (h Handler) CreateQuestPlayer(c echo.Context) error {
 		rsi := handleQuestItem(rqi)
 		h.InsertSelectQuestItem(rsi, playerInfo.Identifier)
 		logger.Info("player get quest success")
-		return c.JSON(http.StatusOK, "success")
+		return c.JSON(http.StatusOK, Message{Message: "success"})
 	}
 
 	logger.Info("player already get quest")
-	return c.JSON(http.StatusOK, "failed")
+	return c.JSON(http.StatusOK, Message{Message: "failed"})
 }
 
 func (h Handler) GetComparePlayerItemAndQuestItem(c echo.Context) error {
