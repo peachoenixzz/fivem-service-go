@@ -46,10 +46,19 @@ func handleQuestItem(res []ResponseQuestItem) []ResponseSelectedItem {
 	return rsis
 }
 
-func handleComparePlayerAndQuestItem(pi []PlayerItems, rqpi []ResponsePlayerQuestItem) {
-
+func handleComparePlayerAndQuestItem(pi map[string]int, rqpi []ResponsePlayerQuestItem) []ResponseItemComparison {
+	var comparisons []ResponseItemComparison
 	for _, items := range rqpi {
-		fmt.Println(pi[items.Quantity], " / ", items.Quantity)
+		var comparsion ResponseItemComparison
+		comparsion = ResponseItemComparison{
+			ItemName:             items.ItemName,
+			LabelName:            items.LabelName,
+			Comparison:           fmt.Sprintf("%v/%v", pi[items.ItemName], items.Quantity),
+			PlayerItemQuantity:   pi[items.ItemName],
+			QuestRequireQuantity: items.Quantity,
+		}
+		comparisons = append(comparisons, comparsion)
+		//fmt.Println(items.ItemName, " : ", pi[items.ItemName], " / ", items.Quantity)
 	}
-
+	return comparisons
 }

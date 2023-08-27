@@ -105,14 +105,15 @@ func (h Handler) QueryQuestItem(ctx context.Context) ([]ResponseQuestItem, error
 	return items, nil
 }
 
-func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) ([]PlayerItems, error) {
+func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) (map[string]int, error) {
 	logger := mlog.Logg
 	stmtStr := "SELECT inventory FROM users u WHERE u.identifier = ?"
 	logger.Info("mysql prepare query Discord ID")
+	var playerItems map[string]int
 	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
 	if err != nil {
 		logger.Error("sql error", zap.Error(err))
-		return []PlayerItems{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		return playerItems, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
 
 	logger.Info("query Row Discord Id")
@@ -120,16 +121,15 @@ func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) ([]Playe
 	err = stmt.QueryRow(discordID).Scan(&itemStr)
 	if err != nil {
 		logger.Error("query row fail ", zap.Error(err))
-		return []PlayerItems{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		return playerItems, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
 	logger.Info("after query row and ready to return Data")
 
-	var items []PlayerItems
-	if err := json.Unmarshal([]byte(itemStr), &items); err != nil {
+	if err := json.Unmarshal([]byte(itemStr), &playerItems); err != nil {
 		logger.Error("Failed to parse JSON item data:", zap.Error(err))
-		return []PlayerItems{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		return playerItems, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
-	return items, nil
+	return playerItems, nil
 }
 
 func (h Handler) InsertSelectQuestItem(rsi []ResponseSelectedItem, discordID string) {
@@ -155,8 +155,9 @@ func (h Handler) GetPlayerQuestItem(ctx context.Context, discordID string) ([]Re
 	var items []ResponsePlayerQuestItem
 	stmtStr := `
 			SELECT 
-				name,
-				quantity
+				subquery.name,
+				quantity,
+				i.label
 			FROM (
 				SELECT 
 					discord_id,
@@ -177,6 +178,8 @@ func (h Handler) GetPlayerQuestItem(ctx context.Context, discordID string) ([]Re
 				AND DATE(created_date) = CURDATE()
 				AND status = 'in_progress'
 			) AS subquery
+			INNER JOIN items i 
+			ON	i.name = subquery.name
 			WHERE subquery.time_range = CASE
 										  WHEN HOUR(NOW()) BETWEEN 0 AND 5 THEN '0.00 - 6.00'
 										  WHEN HOUR(NOW()) BETWEEN 6 AND 11 THEN '6.00 - 12.00'
@@ -204,7 +207,7 @@ func (h Handler) GetPlayerQuestItem(ctx context.Context, discordID string) ([]Re
 
 	for rows.Next() {
 		var item ResponsePlayerQuestItem
-		err := rows.Scan(&item.Name, &item.Quantity)
+		err := rows.Scan(&item.ItemName, &item.Quantity, &item.LabelName)
 		if err != nil {
 			logger.Error("Database Error : ", zap.Error(err))
 			return []ResponsePlayerQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())

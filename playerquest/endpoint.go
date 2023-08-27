@@ -19,16 +19,17 @@ type ResponseRequireQuestPlayer struct {
 	WeightLevel int64 `json:"weightlevel"`
 }
 
-type PlayerItems map[string]interface{}
-
 type ResponseQuestItem struct {
 	Name string
 	Rare string
 }
 
 type ResponseItemComparison struct {
-	ItemName   string `json:"item_name"`
-	Comparison string `json:"comparison"`
+	ItemName             string `json:"item_name"`
+	LabelName            string `json:"label_name"`
+	Comparison           string `json:"comparison"`
+	PlayerItemQuantity   int    `json:"player_item_quantity"`
+	QuestRequireQuantity int64  `json:"quest_require_quantity"`
 }
 
 type ResponseSelectedItem struct {
@@ -38,8 +39,9 @@ type ResponseSelectedItem struct {
 }
 
 type ResponsePlayerQuestItem struct {
-	Name     string
-	Quantity int64
+	ItemName  string
+	LabelName string
+	Quantity  int64
 }
 
 func (h Handler) GetRequireQuestPlayer(c echo.Context) error {
@@ -90,7 +92,7 @@ func (h Handler) GetComparePlayerItemAndQuestItem(c echo.Context) error {
 		logger.Error("got error when query DB : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
 	}
-	handleComparePlayerAndQuestItem(pi, rpqi)
+	res := handleComparePlayerAndQuestItem(pi, rpqi)
 	logger.Info("get result successfully")
-	return c.JSON(http.StatusOK, "eiei")
+	return c.JSON(http.StatusOK, res)
 }
