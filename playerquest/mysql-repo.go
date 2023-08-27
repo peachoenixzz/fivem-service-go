@@ -274,3 +274,46 @@ func (h Handler) GetStateQuest(ctx context.Context, discordID string) bool {
 	logger.Info(fmt.Sprintf("player have quest in this time : %v", time.Now()))
 	return false
 }
+
+func (h Handler) ResetQuest(tx *sql.Tx, discordID string) error {
+	logger := mlog.Logg
+	logger.Info("prepare to make query Discord ID")
+	stmtStr := `
+	
+UPDATE TB_PLAYER_QUEST AS tpq
+SET tpq.status = 'cancel'
+WHERE EXISTS (
+    SELECT 1
+    FROM TB_PLAYER_QUEST AS subquery
+    WHERE subquery.discord_id = ?
+    AND DATE(subquery.created_date) = CURDATE()
+    AND subquery.status = 'in_progress'
+    AND (
+        (HOUR(subquery.created_date) BETWEEN 0 AND 5 AND HOUR(NOW()) BETWEEN 0 AND 5)
+        OR (HOUR(subquery.created_date) BETWEEN 6 AND 11 AND HOUR(NOW()) BETWEEN 6 AND 11)
+        OR (HOUR(subquery.created_date) BETWEEN 12 AND 17 AND HOUR(NOW()) BETWEEN 12 AND 17)
+        OR (HOUR(subquery.created_date) BETWEEN 18 AND 23 AND HOUR(NOW()) BETWEEN 18 AND 23)
+    )
+)
+AND tpq.discord_id = ?
+AND DATE(tpq.created_date) = CURDATE()
+AND tpq.status = 'in_progress';
+`
+
+	r, err := tx.Exec(stmtStr, discordID)
+	if err != nil {
+		// If there is an error, rollback the transaction
+		tx.Rollback()
+		logger.Error("Failed to Update record:", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	rowsAffected, err := r.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		logger.Error("Failed to retrieve affected rows: ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	logger.Info("Row Affected Update cash point table", zap.Int64("row affected", rowsAffected))
+	return nil
+}
