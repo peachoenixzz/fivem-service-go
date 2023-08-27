@@ -303,7 +303,7 @@ AND DATE(tpq.created_date) = CURDATE()
 AND tpq.status = 'in_progress';
 `
 
-	r, err := tx.Exec(stmtStr, discordID)
+	r, err := tx.Exec(stmtStr, discordID, discordID)
 	if err != nil {
 		// If there is an error, rollback the transaction
 		tx.Rollback()

@@ -96,7 +96,7 @@ func (h Handler) ResetQuestPlayer(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
 	}
 
-	return c.JSON(http.StatusOK, Message{Message: "Update Cash Point Successfully"})
+	return c.JSON(http.StatusOK, Message{Message: "Reset Successfully"})
 
 }
 

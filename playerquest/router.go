@@ -31,7 +31,7 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	e.Use(echojwt.WithConfig(JWTConfig))
 	//quest
 	e.POST("/users/create", h.CreateQuestPlayer)
-	e.POST("users/reset", h.ResetQuestPlayer)
+	e.POST("/users/reset", h.ResetQuestPlayer)
 	e.GET("/users/status", h.GetStatusQuest)
 	e.GET("/users/compare", h.GetComparePlayerItemAndQuestItem)
 	e.GET("/users/quest", h.GetRequireQuestPlayer)
