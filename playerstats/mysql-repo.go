@@ -57,6 +57,13 @@ func (h Handler) VehicleByModel(ctx context.Context) error {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
+
 	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
@@ -126,6 +133,13 @@ func (h Handler) AllMoney(ctx context.Context) error {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
+
 	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))

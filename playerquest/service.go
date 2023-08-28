@@ -6,20 +6,26 @@ import (
 	"time"
 )
 
-func handleCardAItem(res *ResponseRequireQuestPlayer, pi map[string]int) ResponseRequireQuestPlayer {
+func handleCardAItem(res ResponseRequireQuestPlayer, pi map[string]int) ResponseRequireQuestPlayer {
 	questAValue, found := pi["quest_a"]
 	if found {
-		res = &ResponseRequireQuestPlayer{
-			CardAItem: questAValue,
+		res = ResponseRequireQuestPlayer{
+			WeightLevel: res.WeightLevel,
+			Quantity:    res.Quantity,
+			CardAItem:   questAValue,
 		}
 	}
 
 	if !found {
-		res = &ResponseRequireQuestPlayer{
-			CardAItem: 0,
+		res = ResponseRequireQuestPlayer{
+			WeightLevel: res.WeightLevel,
+			Quantity:    res.Quantity,
+			CardAItem:   0,
 		}
 	}
-	return *res
+
+	fmt.Println(res.CardAItem, res.WeightLevel, res.Quantity)
+	return res
 }
 
 func handleQuestItem(res []ResponseQuestItem) []ResponseSelectedItem {
@@ -38,26 +44,32 @@ func handleQuestItem(res []ResponseQuestItem) []ResponseSelectedItem {
 	var rsi ResponseSelectedItem
 	// Assign random quantities based on rarity and populate selectedResponseItems
 	for _, item := range selectedItems {
+		fmt.Println(item.Rare)
 		switch item.Rare {
+		case "easy":
+			rsi.Name = item.Name
+			rsi.Quantity = int64(secureRand.Intn(6) + 3) // Generates a random number between 3 and 8 (inclusive)
 		case "normal":
 			rsi.Name = item.Name
-			rsi.Quantity = int64(secureRand.Intn(7) + 4)
+			rsi.Quantity = int64(secureRand.Intn(4) + 2) // Generates a random number between 2 and 5 (inclusive)
 		case "medium":
 			rsi.Name = item.Name
-			rsi.Quantity = int64(secureRand.Intn(3) + 1)
+			rsi.Quantity = int64(secureRand.Intn(3) + 1) // Generates a random number between 1 and 3 (inclusive)
 		case "hard":
 			rsi.Name = item.Name
-			rsi.Quantity = int64(secureRand.Intn(2) + 1)
+			rsi.Quantity = int64(secureRand.Intn(2) + 1) // Generates a random number between 1 and 2 (inclusive)
+		case "rare":
+			rsi.Name = item.Name
+			rsi.Quantity = 1 // Always set the quantity to 1 for the "rare" case
 		}
 
 		rsis = append(rsis, rsi)
 	}
 
-	//for _, item := range rsis {
-	//	fmt.Println("Item Name:", item.Name)
-	//	fmt.Println("Item Rareness:", item.Rare)
-	//	fmt.Println("Item Quantity:", item.Quantity)
-	//}
+	for _, item := range rsis {
+		fmt.Println("Item Name:", item.Name)
+		fmt.Println("Item Quantity:", item.Quantity)
+	}
 
 	return rsis
 }

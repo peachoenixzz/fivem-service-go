@@ -40,6 +40,13 @@ func (h Handler) AllVipItems(ctx context.Context) ([]ResponseVipItems, error) {
 		logger.Error("Database Error : ", zap.Error(err))
 		return []ResponseVipItems{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
+
 	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))

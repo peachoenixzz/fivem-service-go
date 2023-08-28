@@ -81,6 +81,12 @@ func (h Handler) QueryQuestItem(ctx context.Context) ([]ResponseQuestItem, error
 		logger.Error("Database Error : ", zap.Error(err))
 		return []ResponseQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
 
 	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
@@ -115,6 +121,12 @@ func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) (map[str
 		logger.Error("sql error", zap.Error(err))
 		return playerItems, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
 
 	logger.Info("query Row Discord Id")
 	var itemStr string
@@ -125,6 +137,10 @@ func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) (map[str
 	}
 	logger.Info("after query row and ready to return Data")
 
+	//bad idea to handle [] from ESX Framework when no items
+	if itemStr == `[]` {
+		itemStr = `{"mockup":1}`
+	}
 	if err := json.Unmarshal([]byte(itemStr), &playerItems); err != nil {
 		logger.Error("Failed to parse JSON item data:", zap.Error(err))
 		return playerItems, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
@@ -198,6 +214,12 @@ func (h Handler) GetPlayerQuestItem(ctx context.Context, discordID string) ([]Re
 		logger.Error("Database Error : ", zap.Error(err))
 		return []ResponsePlayerQuestItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
 
 	rows, err := stmt.QueryContext(ctx, args...)
 	if err != nil {
@@ -261,6 +283,12 @@ func (h Handler) GetStateQuest(ctx context.Context, discordID string) bool {
 		logger.Error("sql error", zap.Error(err))
 		return false
 	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
 
 	logger.Info("query player quest")
 	var rowCount int
@@ -282,7 +310,7 @@ func (h Handler) ResetQuest(tx *sql.Tx, discordID string) error {
 	logger := mlog.Logg
 	logger.Info("prepare to make query Discord ID")
 	stmtStr := `
-	
+
 UPDATE TB_PLAYER_QUEST AS tpq
 SET tpq.status = 'cancel'
 WHERE EXISTS (

@@ -21,7 +21,7 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	e.Use(middleware.CORS())
 	h := New(cfg.FeatureFlag, mongodb, mysqlDB)
 	// Login route
-	e.POST("/login", h.GetPlayerIdentify)
+	e.POST("/users", h.GetPlayerIdentify)
 	JWTConfig := echojwt.Config{
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
 			return new(mw.JwtCustomClaims)
@@ -30,5 +30,6 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	}
 	r := e.Group("/")
 	r.Use(echojwt.WithConfig(JWTConfig))
+
 	return e
 }

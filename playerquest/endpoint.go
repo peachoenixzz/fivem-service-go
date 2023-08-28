@@ -59,7 +59,7 @@ func (h Handler) GetRequireQuestPlayer(c echo.Context) error {
 		logger.Error("got error when query DB : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
 	}
-	res = handleCardAItem(&res, pi)
+	res = handleCardAItem(res, pi)
 	logger.Info("get result successfully")
 	return c.JSON(http.StatusOK, res)
 }

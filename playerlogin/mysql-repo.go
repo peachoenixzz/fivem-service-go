@@ -29,7 +29,7 @@ func (h Handler) PlayerIdentify(ctx context.Context, req Request) (Response, err
 	logger.Info("mysql prepare query PlayerIdentify")
 	stmt, err := h.MysqlDB.Prepare(query)
 	if err != nil {
-		panic(err.Error())
+		logger.Error("query row fail ", zap.Error(err))
 	}
 	defer func(stmt *sql.Stmt) {
 		err := stmt.Close()

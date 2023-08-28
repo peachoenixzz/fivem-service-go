@@ -135,6 +135,12 @@ ORDER BY
 		logger.Error("Database Error : ", zap.Error(err))
 		return []ResponseItemCashShop{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
 
 	rows, err := stmt.QueryContext(ctx, args...)
 	if err != nil {
