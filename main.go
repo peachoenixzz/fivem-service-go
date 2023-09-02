@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/kkgo-software-engineering/workshop/cashshop"
 	"github.com/kkgo-software-engineering/workshop/fivemroutine"
+	"github.com/kkgo-software-engineering/workshop/gachapon"
 	"github.com/kkgo-software-engineering/workshop/playeridentifier"
 	"github.com/kkgo-software-engineering/workshop/playeritems"
 	"github.com/kkgo-software-engineering/workshop/playerlogin"
@@ -20,7 +21,7 @@ import (
 func main() {
 	logger, _ := zap.NewProduction()
 
-	//os.Setenv("quest", "true")
+	os.Setenv("gachapon", "true")
 	if os.Getenv("quest") != "" {
 		logger.Info("prepare to quest")
 		playerquest.InitService()
@@ -80,6 +81,12 @@ func main() {
 		logger.Info("prepare to cashshop")
 		cashshop.InitService()
 		logger.Info("Registered FiveM log service on /cash-shop")
+	}
+
+	if os.Getenv("gachapon") != "" {
+		logger.Info("prepare to init gachapon")
+		gachapon.InitService()
+		logger.Info("Registered FiveM log service on /gachapon")
 	}
 
 	logger.Info("Register service fail")
