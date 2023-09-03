@@ -33,7 +33,6 @@ func (h Handler) GetAllGachapon(ctx context.Context) ([]AllGachapon, error) {
 
 	// Create a prepared statement
 	logger.Info("mysql prepare query TB_GACHAPON")
-
 	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
@@ -175,4 +174,54 @@ func (h Handler) GetInSlotGiveItemsGachapon(ctx context.Context, req RequestGash
 	}
 	logger.Info("after query row and ready to return Data")
 	return gis, nil
+}
+
+func (h Handler) GetGashaponItemsRate(ctx context.Context, req RequestGashaponName) ([]GachaponItem, error) {
+	logger := mlog.Logg
+	logger.Info("prepare to make query item in gachapon name")
+	stmtStr := `		SELECT  tg.gachapon_id,i.name, tgi.pull_rate , tgi.quantity  
+		FROM TB_GACHAPON_ITEMS tgi  
+		INNER JOIN items i 
+		ON tgi.name = i.name 
+		INNER JOIN TB_GACHAPON tg 
+		ON tg.gachapon_id = tgi.gachapon_id 
+		WHERE tg.name = ?;
+	`
+
+	// Create a prepared statement
+	logger.Info("mysql prepare query TB_GACHAPON")
+
+	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []GachaponItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	defer stmt.Close()
+
+	args := []interface{}{
+		req.Name,
+	}
+
+	rows, err := stmt.QueryContext(ctx, args...)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []GachaponItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	var gci []GachaponItem
+	for rows.Next() {
+		var i Item
+		var pr float64
+		var gid int
+		err := rows.Scan(&gid, &i.Name, &pr, &i.Quantity)
+		if err != nil {
+			logger.Error("Database Error : ", zap.Error(err))
+			return []GachaponItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		}
+		gci = append(gci, GachaponItem{Item: i,
+			PullRate:   pr,
+			GachaponID: gid,
+		})
+	}
+	return gci, nil
 }

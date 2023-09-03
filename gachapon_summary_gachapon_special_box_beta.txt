@@ -1,0 +1,8 @@
+Gachapon Summary:
+armer_100: Count 6279, Expected PullRate 12.000000%, Actual PullRate 2093.000000%
+bonus_c: Count 6265, Expected PullRate 8.000000%, Actual PullRate 2088.333333%
+cement: Count 12508, Expected PullRate 19.000000%, Actual PullRate 4169.333333%
+bonus_e: Count 6232, Expected PullRate 8.000000%, Actual PullRate 2077.333333%
+aed: Count 6236, Expected PullRate 12.000000%, Actual PullRate 2078.666667%
+coin_blacksmith: Count 6184, Expected PullRate 10.000000%, Actual PullRate 2061.333333%
+weapon_box: Count 6296, Expected PullRate 15.000000%, Actual PullRate 2098.666667%
