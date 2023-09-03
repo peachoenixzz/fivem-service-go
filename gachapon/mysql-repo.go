@@ -141,3 +141,38 @@ func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) (map[str
 	}
 	return playerItems, nil
 }
+
+func (h Handler) GetInSlotGiveItemsGachapon(ctx context.Context, req RequestGashaponName, discordID string) (ResponseGiveItemStatus, error) {
+	logger := mlog.Logg
+	query := `
+		SELECT count(1) FROM TB_GACHAPON tg 
+		INNER JOIN TB_GIVE_ITEMS_GACHAPON tgig 
+		ON tg.gachapon_id  = tgig.gachapon_id 
+		WHERE tg.name = ?
+		AND tgig.status = 'pending'
+		AND discord_id = ?;
+`
+
+	// Create a prepared statement
+	logger.Info("mysql prepare query status gachapon")
+	stmt, err := h.MysqlDB.PrepareContext(ctx, query)
+	if err != nil {
+		logger.Error("sql error", zap.Error(err))
+	}
+	defer stmt.Close()
+
+	args := []interface{}{
+		req.Name,
+		discordID,
+	}
+
+	logger.Info("query status gachapon player")
+	var gis ResponseGiveItemStatus
+	err = stmt.QueryRow(args...).Scan(&gis.InSlot)
+	if err != nil {
+		logger.Error("query row fail ", zap.Error(err))
+		return ResponseGiveItemStatus{}, err
+	}
+	logger.Info("after query row and ready to return Data")
+	return gis, nil
+}

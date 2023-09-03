@@ -34,6 +34,10 @@ type RequestGashaponName struct {
 	Name string `json:"name"`
 }
 
+type ResponseGiveItemStatus struct {
+	InSlot int `json:"in_slot"`
+}
+
 func (h Handler) GetPlayerGachaponEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
 	user := c.Get("user").(*jwt.Token)
@@ -65,4 +69,18 @@ func (h Handler) GetItemsInGachaponEndPoint(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
 	}
 	return c.JSON(http.StatusOK, ig)
+}
+
+func (h Handler) GetInSlotGiveItemsInGachaponEndPoint(c echo.Context) error {
+	logger := mlog.L(c)
+	user := c.Get("user").(*jwt.Token)
+	playerInfo := user.Claims.(*mw.JwtCustomClaims)
+	req := RequestGashaponName{}
+	err := c.Bind(&req)
+	st, err := h.GetInSlotGiveItemsGachapon(context.Background(), req, playerInfo.Identifier)
+	if err != nil {
+		logger.Error("got error when query DB : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
+	}
+	return c.JSON(http.StatusOK, st)
 }

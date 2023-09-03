@@ -31,6 +31,7 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	e.Use(echojwt.WithConfig(JWTConfig))
 	//gachapon
 	e.GET("/users/gachapon", h.GetPlayerGachaponEndPoint)
+	e.POST("/users/gachapon/status", h.GetInSlotGiveItemsInGachaponEndPoint)
 	e.POST("/users/gachapon/items", h.GetItemsInGachaponEndPoint)
 	return e
 }
