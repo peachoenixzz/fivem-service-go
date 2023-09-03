@@ -60,8 +60,49 @@ func (h Handler) GetAllGachapon(ctx context.Context) ([]AllGachapon, error) {
 	return items, nil
 }
 
-func (h Handler) GetItemsGachapon() {
+func (h Handler) GetItemsInGachapon(ctx context.Context, req RequestGashaponName) ([]ResponseItemInGashapon, error) {
+	logger := mlog.Logg
+	logger.Info("prepare to make query item in gachapon name")
+	stmtStr := `SELECT tgi.name,CONCAT(i.label," (จำนวน ",tgi.quantity ,")")  FROM TB_GACHAPON tg 
+				INNER JOIN TB_GACHAPON_ITEMS tgi 
+				ON tgi.gachapon_id = tg.gachapon_id 
+				INNER JOIN items i 
+				ON i.name = tgi.name 
+				WHERE
+				tg.name  = ?
+	`
 
+	// Create a prepared statement
+	logger.Info("mysql prepare query TB_GACHAPON")
+
+	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponseItemInGashapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	defer stmt.Close()
+
+	args := []interface{}{
+		req.Name,
+	}
+
+	rows, err := stmt.QueryContext(ctx, args...)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return []ResponseItemInGashapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	var items []ResponseItemInGashapon
+	for rows.Next() {
+		var item ResponseItemInGashapon
+		err := rows.Scan(&item.Name, &item.LabelName)
+		if err != nil {
+			logger.Error("Database Error : ", zap.Error(err))
+			return []ResponseItemInGashapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		}
+		items = append(items, item)
+	}
+	return items, nil
 }
 
 func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) (map[string]int, error) {

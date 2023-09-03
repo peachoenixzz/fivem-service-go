@@ -25,6 +25,15 @@ type AllGachapon struct {
 	LabelName string `json:"label_name"`
 }
 
+type ResponseItemInGashapon struct {
+	Name      string `json:"name"`
+	LabelName string `json:"label_name"`
+}
+
+type RequestGashaponName struct {
+	Name string `json:"name"`
+}
+
 func (h Handler) GetPlayerGachaponEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
 	user := c.Get("user").(*jwt.Token)
@@ -47,6 +56,13 @@ func (h Handler) GetPlayerGachaponEndPoint(c echo.Context) error {
 }
 
 func (h Handler) GetItemsInGachaponEndPoint(c echo.Context) error {
-
-	return c.JSON(http.StatusOK, "eiei")
+	logger := mlog.L(c)
+	req := RequestGashaponName{}
+	err := c.Bind(&req)
+	ig, err := h.GetItemsInGachapon(context.Background(), req)
+	if err != nil {
+		logger.Error("got error when query DB : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
+	}
+	return c.JSON(http.StatusOK, ig)
 }
