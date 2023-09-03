@@ -60,6 +60,8 @@ func (h Handler) GetAllGachapon(ctx context.Context) ([]AllGachapon, error) {
 	return items, nil
 }
 
+func (h Handler) GetItemsGachapon
+
 func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) (map[string]int, error) {
 	logger := mlog.Logg
 	stmtStr := "SELECT inventory FROM users u WHERE u.identifier = ?"

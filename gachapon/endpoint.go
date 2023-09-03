@@ -45,3 +45,8 @@ func (h Handler) GetPlayerGachaponEndPoint(c echo.Context) error {
 	logger.Info("get result successfully")
 	return c.JSON(http.StatusOK, res)
 }
+
+func (h Handler) GetItemsInGachaponEndPoint(c echo.Context) error {
+
+	return c.JSON(http.StatusOK, "eiei")
+}
