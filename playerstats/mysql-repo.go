@@ -176,7 +176,7 @@ func (h Handler) AllMoney(ctx context.Context) error {
 		player.Bank = values["bank"]
 		player.Total = values["money"] + values["bank"]
 		player.BlackMoney = values["black_money"]
-		if (player.Money) >= 0 {
+		if (player.Total) >= 0 {
 			players = append(players, player)
 		}
 		count++
@@ -188,11 +188,11 @@ func (h Handler) AllMoney(ctx context.Context) error {
 	}
 
 	// Print the totals
-	fmt.Println("Total bank:", totalBank)
-	fmt.Println("Total money:", totalMoney)
-	fmt.Println("Total green money before minus starter money :", (totalMoney+totalBank)-(count*3000))
-	fmt.Println("Total green money:", totalMoney+totalBank)
-	fmt.Println("Total black money:", totalBlackMoney)
+	//fmt.Println("Total bank:", totalBank)
+	//fmt.Println("Total money:", totalMoney)
+	//fmt.Println("Total green money before minus starter money :", (totalMoney+totalBank)-(count*3000))
+	//fmt.Println("Total green money:", totalMoney+totalBank)
+	//fmt.Println("Total black money:", totalBlackMoney)
 
 	file := xlsx.NewFile()
 	sheet, err := file.AddSheet("PlayerData")
@@ -214,9 +214,9 @@ func (h Handler) AllMoney(ctx context.Context) error {
 
 	// Write the data to the Excel sheet
 	for _, player := range players {
-		fmt.Println(fmt.Sprintf("%d %s %s", player.Bank, player.FirstName, player.LastName))
-		fmt.Println(fmt.Sprintf("%d %s %s", player.Money, player.FirstName, player.LastName))
-		fmt.Println(fmt.Sprintf("%d %s %s", player.BlackMoney, player.FirstName, player.LastName))
+		//fmt.Println(fmt.Sprintf("%d %s %s", player.Bank, player.FirstName, player.LastName))
+		//fmt.Println(fmt.Sprintf("%d %s %s", player.Money, player.FirstName, player.LastName))
+		//fmt.Println(fmt.Sprintf("%d %s %s", player.BlackMoney, player.FirstName, player.LastName))
 		fmt.Println(fmt.Sprintf("%d %s %s", player.Total, player.FirstName, player.LastName))
 		row := sheet.AddRow()
 		row.AddCell().SetValue(player.FirstName + " " + player.LastName)

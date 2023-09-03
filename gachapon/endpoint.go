@@ -6,26 +6,42 @@ import (
 	"github.com/kkgo-software-engineering/workshop/mlog"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+	"golang.org/x/net/context"
 	"net/http"
 )
 
 type Message struct {
 	Message interface{}
 }
-type ResponseInitGacha struct {
+
+type ResponsePlayerGachapon struct {
+	Name      string `json:"name"`
+	LabelName string `json:"label_name"`
+	Quantity  int    `json:"quantity"`
+}
+
+type AllGachapon struct {
 	Name      string `json:"name"`
 	LabelName string `json:"label_name"`
 }
 
-func (h Handler) GetGachapon(c echo.Context) error {
+func (h Handler) GetPlayerGachaponEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
 	user := c.Get("user").(*jwt.Token)
 	playerInfo := user.Claims.(*mw.JwtCustomClaims)
-	res, err := h.getInitGachapon(c, playerInfo.Identifier)
+	pi, err := h.QueryPlayerItem(context.Background(), playerInfo.Identifier)
 	if err != nil {
 		logger.Error("got error when query DB : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
 	}
+
+	ag, err := h.GetAllGachapon(context.Background())
+	if err != nil {
+		logger.Error("got error when query DB : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
+	}
+
+	res := handleGachaponPlayer(pi, ag)
 	logger.Info("get result successfully")
 	return c.JSON(http.StatusOK, res)
 }
