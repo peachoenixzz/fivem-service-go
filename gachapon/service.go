@@ -9,7 +9,7 @@ func handleGachaponPlayer(pi map[string]int, ag []AllGachapon) []ResponsePlayerG
 			Quantity:  pi[item.Name],
 		}
 		pgs = append(pgs, pg)
-		//fmt.Println(items.ItemName, " : ", pi[items.ItemName], " / ", items.Quantity)
+		//fmt.Println(item.Name, " : ", pi[item.Name])
 	}
 	return pgs
 }

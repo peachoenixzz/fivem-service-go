@@ -50,7 +50,7 @@ func (h Handler) GetAllGachapon(ctx context.Context) ([]AllGachapon, error) {
 	var items []AllGachapon
 	for rows.Next() {
 		var item AllGachapon
-		err := rows.Scan(&item.Name, &item.LabelName)
+		err := rows.Scan(&item.LabelName, &item.Name)
 		if err != nil {
 			logger.Error("Database Error : ", zap.Error(err))
 			return []AllGachapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
