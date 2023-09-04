@@ -114,7 +114,7 @@ func (h Handler) OpenGachaponEndPoint(c echo.Context) error {
 	itemStats := make(map[string]map[string]float64)
 
 	// Run the gachapon draw 300 times
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 50000; i++ {
 		drawnItem, pullRate := handleRandGachaponItems(gci)
 		if drawnItem != nil {
 			if _, exists := itemStats[drawnItem.Name]; !exists {

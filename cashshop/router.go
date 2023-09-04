@@ -11,7 +11,39 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
+	"net/http"
+	"sync"
 )
+
+var (
+	clientLock  = &sync.Mutex{}
+	clientFlags = make(map[string]bool)
+)
+
+func PerClientRateLimiter(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ip := c.RealIP()
+
+		clientLock.Lock()
+		if _, exists := clientFlags[ip]; exists {
+			clientLock.Unlock()
+			return c.JSON(http.StatusTooManyRequests, map[string]string{"message": "already processing"})
+		}
+		// Set the flag to indicate processing for this client
+		clientFlags[ip] = true
+		clientLock.Unlock()
+
+		// Make sure to unset the flag after the request is done or times out
+		defer func() {
+			clientLock.Lock()
+			delete(clientFlags, ip)
+			clientLock.Unlock()
+		}()
+
+		// Call the next handler in the chain
+		return next(c)
+	}
+}
 
 func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysqlDB *sql.DB) *echo.Echo {
 	e := echo.New()
@@ -32,6 +64,6 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	///cash-shop/
 	e.GET("/users", h.GetInitCashShopEndPoint)
 	e.GET("/users/items", h.GetCashShopItemEndPoint)
-	e.PUT("/users/buy", h.BuyCashShopEndPoint)
+	e.PUT("/users/buy", h.BuyCashShopEndPoint, PerClientRateLimiter)
 	return e
 }
