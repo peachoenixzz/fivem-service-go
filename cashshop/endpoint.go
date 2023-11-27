@@ -27,13 +27,16 @@ type ResponseInitCashShop struct {
 }
 
 type RequestBuyItem struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	Quantity int64  `json:"quantity"`
 }
 
 type ResponseItemCashShop struct {
 	LimitType      string `json:"limit_type"`
 	Name           string `json:"item_name"`
 	LabelName      string `json:"label_name"`
+	Description    string `json:"description"`
+	PromotionFlag  string `json:"promotion_flag"`
 	MaxLimit       int64  `json:"max_limit"`
 	Point          int64  `json:"point"`
 	RemainQuantity int64  `json:"remaining_quantity"`
@@ -78,18 +81,25 @@ func (h Handler) GetCashShopItemEndPoint(c echo.Context) error {
 func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 	logger := mlog.Logg
 	var req RequestBuyItem
-	err := c.Bind(&req)
 	user := c.Get("user").(*jwt.Token)
 	playerInfo := user.Claims.(*mw.JwtCustomClaims)
+	err := c.Bind(&req)
 	if err != nil {
 		logger.Error("Failed to bind request:", zap.Error(err))
 		return echo.NewHTTPError(http.StatusBadRequest, "Failed to bind request")
 	}
 
 	tx, err := h.MysqlDB.Begin()
+
 	if err != nil {
 		logger.Error("Failed to Update record:", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
+	}
+
+	if req.Quantity <= 0 {
+		tx.Rollback()
+		logger.Error("Invalid quantity requested.", zap.Int64("Requested", req.Quantity))
+		return c.JSON(http.StatusBadRequest, Message{Message: "fail"})
 	}
 
 	res, err := h.ValidatePurchaseItem(tx, req, playerInfo.Identifier)
@@ -97,6 +107,13 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 		tx.Rollback()
 		logger.Error("Failed to Update record:", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
+	}
+
+	// Add input quantity validation here
+	if req.Quantity > res.RemainQuantity && res.RemainQuantity != -1 { // Assuming `req.Quantity` is the user input
+		tx.Rollback()
+		logger.Error("User requested more than available quantity.", zap.Int64("Requested", req.Quantity), zap.Int64("Available", res.RemainQuantity))
+		return c.JSON(http.StatusBadRequest, Message{Message: "fail"})
 	}
 
 	logger.Info(fmt.Sprintf("Name : %v Point : %v Limit : %v Type : %v Remain : %v Expire : %v Category : %v", res.Name, res.Point, res.MaxLimit, res.LimitType, res.RemainQuantity, res.ExpireDateItem, res.Category))
@@ -111,6 +128,11 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 
 		if count > 0 {
 			if HandleDateExpire(res.ExpireDateItem) {
+				if req.Quantity > 1 { // Assuming `req.Quantity` is the user input
+					tx.Rollback()
+					logger.Error("User requested more than available quantity.", zap.Int64("Requested", req.Quantity), zap.Int64("Available", res.RemainQuantity))
+					return c.JSON(http.StatusBadRequest, Message{Message: "fail"})
+				}
 				err = h.InsertExpireDateItem(tx, res, playerInfo.Identifier)
 				if err != nil {
 					tx.Rollback()
@@ -118,13 +140,15 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 					return c.JSON(http.StatusOK, Message{Message: "fail"})
 				}
 			}
-			err = h.InsertHistoryPurchaseItem(tx, res, playerInfo.Identifier)
-			if err != nil {
-				tx.Rollback()
-				logger.Error("Failed to Update record:", zap.Error(err))
-				return c.JSON(http.StatusOK, Message{Message: "fail"})
+			for i := 0; i < int(req.Quantity); i++ {
+				err = h.InsertHistoryPurchaseItem(tx, res, playerInfo.Identifier)
+				if err != nil {
+					tx.Rollback()
+					logger.Error("Failed to Update record:", zap.Error(err))
+					return c.JSON(http.StatusOK, Message{Message: "fail"})
+				}
 			}
-			err = h.InsertGivePlayerItem(tx, res, playerInfo.Identifier)
+			err = h.InsertGivePlayerItem(tx, res, req, playerInfo.Identifier)
 			if err != nil {
 				tx.Rollback()
 				logger.Error("Failed to Update record:", zap.Error(err))

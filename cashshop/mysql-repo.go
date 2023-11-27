@@ -82,7 +82,9 @@ func (h Handler) GetCashShopItem(ctx context.Context, discordID string) ([]Respo
         WHEN ci.limit_type = '02' THEN ci.limit - COALESCE(hourly_count.count, 0)
         ELSE -1
     END AS remaining_quantity,
-    i.label as label_name
+    i.label as label_name,
+	ci.promotion_flag,
+	ci.description
 	FROM
 		items i 
 INNER JOIN cash_items ci ON i.name = ci.name
@@ -150,7 +152,7 @@ ORDER BY
 
 	for rows.Next() {
 		var item ResponseItemCashShop
-		err := rows.Scan(&item.Name, &item.Point, &item.MaxLimit, &item.LimitType, &item.RemainQuantity, &item.LabelName)
+		err := rows.Scan(&item.Name, &item.Point, &item.MaxLimit, &item.LimitType, &item.RemainQuantity, &item.LabelName, &item.PromotionFlag, &item.Description)
 		if err != nil {
 			logger.Error("Database Error : ", zap.Error(err))
 			return []ResponseItemCashShop{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
@@ -248,16 +250,18 @@ func (h Handler) PurchaseItem(tx *sql.Tx, req RequestBuyItem, discordID string) 
 	logger := mlog.Logg
 	logger.Info("prepare to make query Discord ID")
 	stmtStr := `
-			UPDATE cash_point AS cp
-			JOIN cash_items AS ci
-			ON cp.discord_id = ? AND ci.name = ?
-			SET cp.point = cp.point - ci.point
-			WHERE cp.point >= ci.point;
+	UPDATE cash_point AS cp
+	JOIN cash_items AS ci
+	ON cp.discord_id = ? AND ci.name = ?
+	SET cp.point = cp.point - (ci.point * ?)
+	WHERE cp.point >= (ci.point * ?);
 	`
 
 	args := []interface{}{
 		discordID,
 		req.Name,
+		req.Quantity,
+		req.Quantity,
 	}
 
 	r, err := tx.Exec(stmtStr, args...)
@@ -348,7 +352,7 @@ func (h Handler) InsertHistoryPurchaseItem(tx *sql.Tx, i ResponseValidateItem, d
 	return nil
 }
 
-func (h Handler) InsertGivePlayerItem(tx *sql.Tx, i ResponseValidateItem, discordID string) error {
+func (h Handler) InsertGivePlayerItem(tx *sql.Tx, i ResponseValidateItem, req RequestBuyItem, discordID string) error {
 	logger := mlog.Logg
 	logger.Info("prepare to make Insert Vip give player items ")
 	stmtStr := `
@@ -358,7 +362,7 @@ func (h Handler) InsertGivePlayerItem(tx *sql.Tx, i ResponseValidateItem, discor
 	`
 	args := []interface{}{
 		i.Name,
-		1,
+		req.Quantity,
 		discordID,
 		i.Category,
 	}

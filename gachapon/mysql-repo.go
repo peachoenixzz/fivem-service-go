@@ -59,16 +59,17 @@ func (h Handler) GetAllGachapon(ctx context.Context) ([]AllGachapon, error) {
 	return items, nil
 }
 
-func (h Handler) GetItemsInGachapon(ctx context.Context, req RequestGashaponName) ([]ResponseItemInGashapon, error) {
+func (h Handler) GetItemsInGachapon(ctx context.Context, req RequestGachaponName) ([]ResponseItemInGachapon, error) {
 	logger := mlog.Logg
 	logger.Info("prepare to make query item in gachapon name")
-	stmtStr := `SELECT tgi.name,CONCAT(i.label," (จำนวน ",tgi.quantity ,")")  FROM TB_GACHAPON tg 
+	stmtStr := `SELECT tgi.name,CONCAT(i.label," (จำนวน ",tgi.quantity ,")"),tgi.gachapon_item_id  FROM TB_GACHAPON tg 
 				INNER JOIN TB_GACHAPON_ITEMS tgi 
 				ON tgi.gachapon_id = tg.gachapon_id 
 				INNER JOIN items i 
 				ON i.name = tgi.name 
 				WHERE
 				tg.name  = ?
+				ORDER BY pull_rate DESC
 	`
 
 	// Create a prepared statement
@@ -77,7 +78,7 @@ func (h Handler) GetItemsInGachapon(ctx context.Context, req RequestGashaponName
 	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
-		return []ResponseItemInGashapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		return []ResponseItemInGachapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
 	defer stmt.Close()
 
@@ -88,16 +89,16 @@ func (h Handler) GetItemsInGachapon(ctx context.Context, req RequestGashaponName
 	rows, err := stmt.QueryContext(ctx, args...)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
-		return []ResponseItemInGashapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		return []ResponseItemInGachapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
 
-	var items []ResponseItemInGashapon
+	var items []ResponseItemInGachapon
 	for rows.Next() {
-		var item ResponseItemInGashapon
-		err := rows.Scan(&item.Name, &item.LabelName)
+		var item ResponseItemInGachapon
+		err := rows.Scan(&item.Name, &item.LabelName, &item.ItemId)
 		if err != nil {
 			logger.Error("Database Error : ", zap.Error(err))
-			return []ResponseItemInGashapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+			return []ResponseItemInGachapon{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 		}
 		items = append(items, item)
 	}
@@ -107,19 +108,14 @@ func (h Handler) GetItemsInGachapon(ctx context.Context, req RequestGashaponName
 func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) (map[string]int, error) {
 	logger := mlog.Logg
 	stmtStr := "SELECT inventory FROM users u WHERE u.identifier = ?"
-	logger.Info("mysql prepare query Discord ID")
+	logger.Info("mysql prepare query player item on inventory")
 	var playerItems map[string]int
 	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
 	if err != nil {
 		logger.Error("sql error", zap.Error(err))
 		return playerItems, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
-	defer func(stmt *sql.Stmt) {
-		err := stmt.Close()
-		if err != nil {
-
-		}
-	}(stmt)
+	defer stmt.Close()
 
 	logger.Info("query Row Discord Id")
 	var itemStr string
@@ -141,7 +137,7 @@ func (h Handler) QueryPlayerItem(ctx context.Context, discordID string) (map[str
 	return playerItems, nil
 }
 
-func (h Handler) GetInSlotGiveItemsGachapon(ctx context.Context, req RequestGashaponName, discordID string) (ResponseGiveItemStatus, error) {
+func (h Handler) GetInSlotGiveItemsGachapon(ctx context.Context, req RequestGachaponName, discordID string) (ResponseGiveItemStatus, error) {
 	logger := mlog.Logg
 	query := `
 		SELECT count(1) FROM TB_GACHAPON tg 
@@ -176,10 +172,51 @@ func (h Handler) GetInSlotGiveItemsGachapon(ctx context.Context, req RequestGash
 	return gis, nil
 }
 
-func (h Handler) GetGashaponItemsRate(ctx context.Context, req RequestGashaponName) ([]GachaponItem, error) {
+func (h Handler) InsertItemPrepareGivePlayer(tx *sql.Tx, i []ItemInsert, req RequestOpenGachapon, discordID string) error {
+	logger := mlog.Logg
+	logger.Info("prepare to do stmt history purchase item")
+	for _, v := range i {
+		stmtStr := `
+		INSERT
+		INTO TB_GIVE_ITEMS_GACHAPON (discord_id,item_name,quantity,status,gachapon_id,category,gachapon_name,created_date,last_update)
+		VALUES (?,?,?,?,?,?,?,SYSDATE(),SYSDATE())
+	`
+		args := []interface{}{
+			discordID,
+			v.Name,
+			v.Quantity,
+			"pending",
+			v.GachaponID,
+			v.Category,
+			req.Name,
+		}
+
+		//for _, v := range args {
+		//	fmt.Println(v)
+		//}
+
+		logger.Info("prepare to Insert history purchase item")
+		r, err := tx.Exec(stmtStr, args...)
+		if err != nil {
+			logger.Error("Failed to Insert gachapon Item record:", zap.Error(err))
+			return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		}
+
+		logger.Info("prepare to Insert history purchase item")
+		rowsAffected, err := r.RowsAffected()
+		if err != nil {
+			logger.Error("Failed to Insert history purchase record: ", zap.Error(err))
+			return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		}
+		logger.Info("Row Affected Update Insert history purchase table", zap.Int64("row affected", rowsAffected))
+	}
+	return nil
+}
+
+func (h Handler) GetGashaponItemsRate(ctx context.Context, req RequestOpenGachapon) ([]GachaponItem, error) {
 	logger := mlog.Logg
 	logger.Info("prepare to make query item in gachapon name")
-	stmtStr := `		SELECT  tg.gachapon_id,i.name, tgi.pull_rate , tgi.quantity  
+	stmtStr := `SELECT  tg.gachapon_id,i.name, tgi.pull_rate , tgi.quantity,tgi.category,tgi.gachapon_item_id
 		FROM TB_GACHAPON_ITEMS tgi  
 		INNER JOIN items i 
 		ON tgi.name = i.name 
@@ -213,7 +250,7 @@ func (h Handler) GetGashaponItemsRate(ctx context.Context, req RequestGashaponNa
 		var i Item
 		var pr float64
 		var gid int
-		err := rows.Scan(&gid, &i.Name, &pr, &i.Quantity)
+		err := rows.Scan(&gid, &i.Name, &pr, &i.Quantity, &i.Category, &i.ItemId)
 		if err != nil {
 			logger.Error("Database Error : ", zap.Error(err))
 			return []GachaponItem{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())

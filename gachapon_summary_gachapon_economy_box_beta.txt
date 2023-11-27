@@ -1,9 +1,0 @@
-Gachapon Summary:
-squid_3: Count 1513, Expected PullRate 15.000000%, Actual PullRate 504.333333%
-squid_ink: Count 398, Expected PullRate 5.000000%, Actual PullRate 132.666667%
-rice_pack_1: Count 1532, Expected PullRate 15.000000%, Actual PullRate 510.666667%
-coconut_pack_1: Count 1573, Expected PullRate 15.000000%, Actual PullRate 524.333333%
-wood_pro_3: Count 422, Expected PullRate 5.000000%, Actual PullRate 140.666667%
-chicken_pack_1: Count 1453, Expected PullRate 15.000000%, Actual PullRate 484.333333%
-wood_pro_1: Count 1571, Expected PullRate 15.000000%, Actual PullRate 523.666667%
-pork_pack_1: Count 1530, Expected PullRate 15.000000%, Actual PullRate 510.000000%

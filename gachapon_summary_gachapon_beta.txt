@@ -1,9 +1,0 @@
-Gachapon Summary:
-gachapon_illegal_box_beta: Count 6346, Expected PullRate 75.000000%, Actual PullRate 2115.333333%
-gachapon_material_box_beta: Count 5951, Expected PullRate 73.000000%, Actual PullRate 1983.666667%
-gachapon_mix_box_beta: Count 4506, Expected PullRate 60.000000%, Actual PullRate 1502.000000%
-gachapon_money_box_beta: Count 5472, Expected PullRate 70.000000%, Actual PullRate 1824.000000%
-gachapon_special_box_beta: Count 2227, Expected PullRate 30.000000%, Actual PullRate 742.333333%
-gachapon_weapon_box_beta: Count 2910, Expected PullRate 40.000000%, Actual PullRate 970.000000%
-gachapon_ticket_box_beta: Count 3946, Expected PullRate 55.000000%, Actual PullRate 1315.333333%
-gachapon_economy_box_beta: Count 18642, Expected PullRate 100.000000%, Actual PullRate 6214.000000%

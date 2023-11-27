@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"net/http"
-	"os"
 )
 
 type Message struct {
@@ -29,7 +28,17 @@ type AllGachapon struct {
 
 type Item struct {
 	Name     string
+	Category string
+	ItemId   string
 	Quantity int
+}
+
+type ItemInsert struct {
+	Name       string
+	Category   string
+	ItemId     string
+	Quantity   int
+	GachaponID int
 }
 
 type GachaponItem struct {
@@ -38,18 +47,28 @@ type GachaponItem struct {
 	PullRate   float64
 }
 
-type ResponseItemInGashapon struct {
+type ResponseItemInGachapon struct {
 	Name      string `json:"name"`
 	LabelName string `json:"label_name"`
+	ItemId    string `json:"id"`
 }
 
-type RequestGashaponName struct {
+type RequestGachaponName struct {
 	Name string `json:"name"`
+}
+
+type RequestOpenGachapon struct {
+	Name     string `json:"name"`
+	Quantity int    `json:"quantity"`
 }
 
 type ResponseGiveItemStatus struct {
 	InSlot int `json:"in_slot"`
 }
+
+const (
+	maxQuantity = 500
+)
 
 func (h Handler) GetPlayerGachaponEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
@@ -74,7 +93,7 @@ func (h Handler) GetPlayerGachaponEndPoint(c echo.Context) error {
 
 func (h Handler) GetItemsInGachaponEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
-	req := RequestGashaponName{}
+	req := RequestGachaponName{}
 	err := c.Bind(&req)
 	ig, err := h.GetItemsInGachapon(context.Background(), req)
 	if err != nil {
@@ -88,7 +107,7 @@ func (h Handler) GetInSlotGiveItemsInGachaponEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
 	user := c.Get("user").(*jwt.Token)
 	playerInfo := user.Claims.(*mw.JwtCustomClaims)
-	req := RequestGashaponName{}
+	req := RequestGachaponName{}
 	err := c.Bind(&req)
 	st, err := h.GetInSlotGiveItemsGachapon(context.Background(), req, playerInfo.Identifier)
 	if err != nil {
@@ -100,50 +119,74 @@ func (h Handler) GetInSlotGiveItemsInGachaponEndPoint(c echo.Context) error {
 
 func (h Handler) OpenGachaponEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
-	//user := c.Get("user").(*jwt.Token)
-	//playerInfo := user.Claims.(*mw.JwtCustomClaims)
-	req := RequestGashaponName{}
+	user := c.Get("user").(*jwt.Token)
+	playerInfo := user.Claims.(*mw.JwtCustomClaims)
+	req := RequestOpenGachapon{}
 	err := c.Bind(&req)
+
+	if req.Quantity > maxQuantity {
+		logger.Error(fmt.Sprintf("wrong quantity to request (maxPull reason) (%v)", playerInfo.Identifier))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("wrong quantity to request (%v)", playerInfo.Identifier))
+	}
+
+	if req.Quantity <= 0 {
+		logger.Error(fmt.Sprintf("wrong quantity to request (%v)", playerInfo.Identifier))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("wrong quantity to request (%v)", playerInfo.Identifier))
+	}
+
+	pi, err := h.QueryPlayerItem(context.Background(), playerInfo.Identifier)
+	if err != nil {
+		logger.Error("got error when query DB : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
+	}
+
+	if pi[req.Name] < req.Quantity {
+		logger.Error(fmt.Sprintf("player have items less than request (%v) (actual %v , expected %v)", playerInfo.Identifier, pi[req.Name], req.Quantity))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("player have items less than request (%v)", playerInfo.Identifier))
+	}
+
 	gci, err := h.GetGashaponItemsRate(context.Background(), req)
 	if err != nil {
 		logger.Error("got error when query DB : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "query error")
 	}
 
-	// Run the gachapon draw 300 times
-	itemStats := make(map[string]map[string]float64)
-
-	// Run the gachapon draw 300 times
-	for i := 0; i < 50000; i++ {
-		drawnItem, pullRate := handleRandGachaponItems(gci)
+	itemRand := make(map[string]map[string]any)
+	for i := 0; i < req.Quantity; i++ {
+		drawnItem, gid, cg := handleRandGachaponItems(gci)
 		if drawnItem != nil {
-			if _, exists := itemStats[drawnItem.Name]; !exists {
-				itemStats[drawnItem.Name] = map[string]float64{
-					"count":    0,
-					"pullRate": pullRate,
+			if _, exists := itemRand[drawnItem.ItemId]; !exists {
+				itemRand[drawnItem.ItemId] = map[string]any{
+					"count":       0,
+					"gachapon_id": gid,
+					"category":    cg,
 				}
 			}
-			itemStats[drawnItem.Name]["count"]++
+			itemRand[drawnItem.ItemId]["count"] = itemRand[drawnItem.ItemId]["count"].(int) + 1
 		}
 	}
 
-	// Create and open the text file
-	file, err := os.Create(fmt.Sprintf("gachapon_summary_%v.txt", req.Name))
+	itemsInsert, items := handleRandResponseAndInsertGachapon(itemRand, gci)
+	tx, err := h.MysqlDB.Begin()
+	defer func() {
+		switch err {
+		case nil:
+			tx.Commit()
+		default:
+			tx.Rollback()
+		}
+	}()
+
 	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	// Print and write the summary to the text file
-	fmt.Fprintln(file, "Gachapon Summary:")
-	fmt.Println("Gachapon Summary:")
-	for itemName, stats := range itemStats {
-		actualRate := (stats["count"] / 300.0) * 100
-		summary := fmt.Sprintf("%s: Count %.0f, Expected PullRate %f%%, Actual PullRate %f%%",
-			itemName, stats["count"], stats["pullRate"]*100, actualRate)
-		fmt.Fprintln(file, summary)
-		fmt.Println(summary)
+		logger.Error("Failed transaction:", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
 	}
 
-	return nil
+	err = h.InsertItemPrepareGivePlayer(tx, itemsInsert, req, playerInfo.Identifier)
+	if err != nil {
+		logger.Error("Failed transaction insert give item:", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
+	}
+
+	return c.JSON(http.StatusOK, items)
 }

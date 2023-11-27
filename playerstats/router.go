@@ -21,6 +21,8 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	h := New(cfg.FeatureFlag, mongodb, mysqlDB)
 	// Login route
 	e.GET("/money", h.GetAllMoney)
+	e.GET("/playeritems", h.GetItemPlayer)
+	e.GET("/playervault", h.GetItemVault)
 	e.GET("/vehicle", h.GetVehicleByModel)
 	//r.GET("auth", mw.Restricted)
 	//hFiveMLog := New(cfg.FeatureFlag, postgresDB, mongodb)

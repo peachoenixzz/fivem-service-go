@@ -35,6 +35,13 @@ type Player struct {
 	BlackMoney int    `json:"black_money"`
 }
 
+type PlayerItem struct {
+	FirstName  string `json:"first_name"`
+	LastName   string `json:"last_name"`
+	Steel      string `json:"steel"`
+	TotalSteel int    `json:"total_steel"`
+}
+
 type Vehicle struct {
 	Owner       string      `json:"owner"`
 	VehicleData string      `json:"vehicle_data"`
@@ -236,6 +243,137 @@ func (h Handler) AllMoney(ctx context.Context) error {
 	fmt.Println("Data imported successfully to player_data.xlsx")
 
 	if err = rows.Err(); err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	return nil
+}
+
+func (h Handler) ItemPlayer(ctx context.Context) error {
+	logger := mlog.Logg
+	logger.Info("prepare to make query AllMoney")
+	stmtStr := `
+    	SELECT 
+			inventory,
+			firstname,
+			lastname
+		FROM 
+			users
+	`
+
+	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	steelProcess := 0
+	//count := 0
+	//var pis []PlayerItem
+	// Iterate over the rows
+	for rows.Next() {
+		var pi PlayerItem
+		var data string
+		if err := rows.Scan(&data, &pi.FirstName, &pi.LastName); err != nil {
+			logger.Error("Database Error : ", zap.Error(err))
+			return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		}
+
+		// Parse the data JSON
+
+		if data != "[]" {
+			var values map[string]int
+			if err := json.Unmarshal([]byte(data), &values); err != nil {
+				logger.Error("Database Error : ", zap.Error(err))
+				return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+			}
+
+			// Update the totals
+			steelProcess += values["steel_pro_1"]
+		}
+
+	}
+
+	fmt.Println(steelProcess)
+
+	if err := rows.Err(); err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	return nil
+}
+
+func (h Handler) ItemVault(ctx context.Context) error {
+	logger := mlog.Logg
+	logger.Info("prepare to make query AllMoney")
+	stmtStr := `
+    	SELECT 
+			items
+		FROM 
+			nc_vault_storage
+	`
+
+	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	steelProcess := 0
+	count := 0
+	//var pis []PlayerItem
+	// Iterate over the rows
+	for rows.Next() {
+		var data string
+		if err := rows.Scan(&data); err != nil {
+			logger.Error("Database Error : ", zap.Error(err))
+			return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+		}
+
+		if data != "[]" && data != "" {
+			var values map[string]int
+			if err := json.Unmarshal([]byte(data), &values); err != nil {
+				logger.Error("Database Error : ", zap.Error(err))
+				return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+			}
+
+			// Update the totals
+			if values["steel_pro_1"] > 0 {
+				steelProcess += values["steel_pro_1"]
+				count++
+			}
+		}
+	}
+	fmt.Println(count)
+	fmt.Println(steelProcess)
+
+	if err := rows.Err(); err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}

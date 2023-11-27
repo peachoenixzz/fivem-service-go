@@ -23,7 +23,7 @@ func New(cfgFlag config.FeatureFlag, mongoDB *mongo.Client, mysqlDB *sql.DB) *Ha
 func (h Handler) PlayerIdentify(ctx context.Context, req Request) (Response, error) {
 	logger := mlog.Logg
 	logger.Info("prepare to make query PlayerIdentify")
-	query := "SELECT `identifier`,`job`,`group` FROM es_extended.users WHERE identifier = ?"
+	query := "SELECT `identifier`,`job`,`group` FROM users WHERE identifier = ?"
 
 	// Create a prepared statement
 	logger.Info("mysql prepare query PlayerIdentify")

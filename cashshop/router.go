@@ -16,27 +16,31 @@ import (
 )
 
 var (
+	// Use a map and a mutex to safely keep track of which clients are making requests
 	clientLock  = &sync.Mutex{}
 	clientFlags = make(map[string]bool)
 )
 
+// PerClientRateLimiter only allows one request per client to be processed at a time.
 func PerClientRateLimiter(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		ip := c.RealIP()
+		user := c.Get("user").(*jwt.Token)
+		playerInfo := user.Claims.(*mw.JwtCustomClaims)
+		userID := playerInfo.Identifier // Assume the user ID is stored in the 'id' claim
 
 		clientLock.Lock()
-		if _, exists := clientFlags[ip]; exists {
+		if _, exists := clientFlags[userID]; exists {
 			clientLock.Unlock()
 			return c.JSON(http.StatusTooManyRequests, map[string]string{"message": "already processing"})
 		}
 		// Set the flag to indicate processing for this client
-		clientFlags[ip] = true
+		clientFlags[userID] = true
 		clientLock.Unlock()
 
 		// Make sure to unset the flag after the request is done or times out
 		defer func() {
 			clientLock.Lock()
-			delete(clientFlags, ip)
+			delete(clientFlags, userID)
 			clientLock.Unlock()
 		}()
 

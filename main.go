@@ -21,7 +21,7 @@ import (
 func main() {
 	logger, _ := zap.NewProduction()
 
-	os.Setenv("gachapon", "true")
+	os.Setenv("cashshop", "true")
 	if os.Getenv("quest") != "" {
 		logger.Info("prepare to quest")
 		playerquest.InitService()

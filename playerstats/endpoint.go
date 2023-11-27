@@ -30,6 +30,32 @@ func (h Handler) GetAllMoney(c echo.Context) error {
 	return c.JSON(http.StatusOK, "success")
 }
 
+func (h Handler) GetItemPlayer(c echo.Context) error {
+	logger := mlog.L(c)
+	err := h.ItemPlayer(context.Background())
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	logger.Info("get request event endpoint successfully")
+
+	logger.Info("get result successfully")
+	return c.JSON(http.StatusOK, "success")
+}
+
+func (h Handler) GetItemVault(c echo.Context) error {
+	logger := mlog.L(c)
+	err := h.ItemVault(context.Background())
+	if err != nil {
+		logger.Error("Database Error : ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	logger.Info("get request event endpoint successfully")
+
+	logger.Info("get result successfully")
+	return c.JSON(http.StatusOK, "success")
+}
+
 func (h Handler) GetVehicleByModel(c echo.Context) error {
 	logger := mlog.L(c)
 	err := h.VehicleByModel(context.Background())
