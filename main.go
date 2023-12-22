@@ -1,19 +1,19 @@
 package main
 
 import (
-	"github.com/kkgo-software-engineering/workshop/cashshop"
-	"github.com/kkgo-software-engineering/workshop/fivemroutine"
-	"github.com/kkgo-software-engineering/workshop/gachapon"
-	"github.com/kkgo-software-engineering/workshop/playeridentifier"
-	"github.com/kkgo-software-engineering/workshop/playeritems"
-	"github.com/kkgo-software-engineering/workshop/playerlogin"
-	"github.com/kkgo-software-engineering/workshop/playerquest"
-	"github.com/kkgo-software-engineering/workshop/playerstats"
-	"github.com/kkgo-software-engineering/workshop/policelogs"
-	"github.com/kkgo-software-engineering/workshop/uploadimage"
 	"os"
 
-	"github.com/kkgo-software-engineering/workshop/playerlogs"
+	"github.com/kkgo-software-engineering/workshop/cashshop"
+	"github.com/kkgo-software-engineering/workshop/internals/fivemroutine"
+	"github.com/kkgo-software-engineering/workshop/internals/gachapon"
+	"github.com/kkgo-software-engineering/workshop/internals/playeridentifier"
+	"github.com/kkgo-software-engineering/workshop/internals/playeritems"
+	"github.com/kkgo-software-engineering/workshop/internals/playerlogin"
+	"github.com/kkgo-software-engineering/workshop/internals/playerlogs"
+	"github.com/kkgo-software-engineering/workshop/internals/playerquest"
+	"github.com/kkgo-software-engineering/workshop/internals/playerstats"
+	"github.com/kkgo-software-engineering/workshop/internals/policelogs"
+	"github.com/kkgo-software-engineering/workshop/internals/uploadimage"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 )
@@ -21,7 +21,7 @@ import (
 func main() {
 	logger, _ := zap.NewProduction()
 
-	os.Setenv("cashshop", "true")
+	//os.Setenv("cashshop", "true")
 	if os.Getenv("quest") != "" {
 		logger.Info("prepare to quest")
 		playerquest.InitService()
