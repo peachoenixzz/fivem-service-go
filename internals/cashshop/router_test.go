@@ -1,6 +1,6 @@
 //go:build unit
 
-package policelogs
+package cashshop
 
 import (
 	"database/sql"

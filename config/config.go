@@ -33,9 +33,8 @@ type FeatureFlag struct {
 }
 
 const (
-	cHostname = "HOSTNAME"
-	cPort     = "PORT"
-
+	cHostname                      = "HOSTNAME"
+	cPort                          = "PORT"
 	cFlagIsLimitMaxBalanceOnCreate = "FLAG_IS_LIMIT_MAX_SPEND_ON_CREATE"
 	cDBConnection                  = "DB_CONNECTION"
 )

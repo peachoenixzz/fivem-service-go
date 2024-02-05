@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/kkgo-software-engineering/workshop/internals/cashshop"
 	"os"
 
-	"github.com/kkgo-software-engineering/workshop/cashshop"
 	"github.com/kkgo-software-engineering/workshop/internals/fivemroutine"
 	"github.com/kkgo-software-engineering/workshop/internals/gachapon"
 	"github.com/kkgo-software-engineering/workshop/internals/playeridentifier"
