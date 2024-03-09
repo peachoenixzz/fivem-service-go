@@ -68,6 +68,6 @@ func (h Handler) UploadImage(c echo.Context, f *multipart.FileHeader) (Response,
 		logger.Error(fmt.Sprintf("Failed to move file to destination err (Create) : %s", err.Error()))
 		return Response{http.StatusInternalServerError, "", err.Error()}, err
 	}
-	url := fmt.Sprintf("https://circleproject.dev/%s", dir)
+	url := fmt.Sprintf("https://mongkol.dev/%s", dir)
 	return Response{http.StatusOK, url, "Create Successfully"}, nil
 }

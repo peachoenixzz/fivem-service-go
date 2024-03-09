@@ -3,13 +3,19 @@ package cashshop
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kkgo-software-engineering/workshop/config"
 	"github.com/kkgo-software-engineering/workshop/mlog"
+	"github.com/kkgo-software-engineering/workshop/pkg/randalphabet"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -316,7 +322,86 @@ func (h Handler) InsertExpireDateItem(tx *sql.Tx, i ResponseValidateItem, discor
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
 	}
 	logger.Info("Row Affected Update vip table", zap.Int64("row affected", rowsAffected))
+	return nil
+}
 
+func (h Handler) InsertExpireDateVehicle(tx *sql.Tx, i ResponseValidateItem, discordID string) error {
+	logger := mlog.Logg
+	logger.Info("prepare to do stmt expire date")
+	var result map[string]interface{}
+	parts := strings.Split(i.Name, "_")
+	filePath := filepath.Join("/app/shared/vehicle", fmt.Sprintf("%s.json", parts[0]))
+	fmt.Println(filePath)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Println("Error reading JSON file:", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	err = json.Unmarshal(data, &result)
+	if err != nil {
+		fmt.Println("Error unmarshalling JSON:", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+
+	result["plate"] = fmt.Sprintf("%s", randalphabet.VehiclePlate())
+	result["bodyHealth"] = 999.9
+	result["engineHealth"] = 999.9
+	result["tankHealth"] = 999.9
+	jsonData, err := json.Marshal(result)
+	if err != nil {
+		fmt.Println("Error marshalling map to JSON:", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	vehicle := string(jsonData)
+	stmtStr := `
+		INSERT INTO owned_vehicles (owner, 
+		                            state, 
+		                            plate, 
+		                            vehicle,
+		                            type,
+		                            job,
+		                            stored,
+		                            vehiclename,
+		                            properties,
+		                            police,
+		                            time,
+		                            expire_date)
+		VALUES (?,?,?,?,?,?,?,?,?,?,SYSDATE(),?)
+		
+	`
+	logger.Info("prepare to calculate expire date")
+	currentTime := time.Now()
+	expireDate := currentTime.AddDate(0, 0, i.ExpireDateItem)
+	logger.Info("done to calculate expire date")
+	args := []interface{}{
+		discordID,
+		"0",
+		result["plate"],
+		vehicle,
+		"car",
+		"player",
+		1,
+		"cashvehicle",
+		0,
+		0,
+		expireDate,
+	}
+	logger.Info("prepare to Insert expire date ")
+	r, err := tx.Exec(stmtStr, args...)
+	if err != nil {
+		tx.Rollback()
+		logger.Error("Failed to Insert Expire Item record:", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	logger.Info("done to Insert expire date ")
+	rowsAffected, err := r.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		logger.Error("Failed to Insert Expire Item record: ", zap.Error(err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
+	}
+	logger.Info("Row Affected Update vip table", zap.Int64("row affected", rowsAffected))
 	return nil
 }
 

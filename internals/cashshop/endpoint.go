@@ -2,12 +2,10 @@ package cashshop
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	mw "github.com/kkgo-software-engineering/workshop/middleware"
-	//"fmt"
-	//"github.com/golang-jwt/jwt/v4"
-	//mw "github.com/kkgo-software-engineering/workshop/middleware"
 	"github.com/kkgo-software-engineering/workshop/mlog"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -99,7 +97,7 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 	if req.Quantity <= 0 {
 		tx.Rollback()
 		logger.Error("Invalid quantity requested.", zap.Int64("Requested", req.Quantity))
-		return c.JSON(http.StatusBadRequest, Message{Message: "fail"})
+		return c.JSON(http.StatusOK, Message{Message: "fail"})
 	}
 
 	res, err := h.ValidatePurchaseItem(tx, req, playerInfo.Identifier)
@@ -109,11 +107,10 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Database Error")
 	}
 
-	// Add input quantity validation here
 	if req.Quantity > res.RemainQuantity && res.RemainQuantity != -1 { // Assuming `req.Quantity` is the user input
 		tx.Rollback()
 		logger.Error("User requested more than available quantity.", zap.Int64("Requested", req.Quantity), zap.Int64("Available", res.RemainQuantity))
-		return c.JSON(http.StatusBadRequest, Message{Message: "fail"})
+		return c.JSON(http.StatusOK, Message{Message: "fail"})
 	}
 
 	logger.Info(fmt.Sprintf("Name : %v Point : %v Limit : %v Type : %v Remain : %v Expire : %v Category : %v", res.Name, res.Point, res.MaxLimit, res.LimitType, res.RemainQuantity, res.ExpireDateItem, res.Category))
@@ -127,45 +124,82 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 		}
 
 		if count > 0 {
-			if HandleDateExpire(res.ExpireDateItem) {
-				if req.Quantity > 1 { // Assuming `req.Quantity` is the user input
-					tx.Rollback()
-					logger.Error("User requested more than available quantity.", zap.Int64("Requested", req.Quantity), zap.Int64("Available", res.RemainQuantity))
-					return c.JSON(http.StatusBadRequest, Message{Message: "fail"})
-				}
-				err = h.InsertExpireDateItem(tx, res, playerInfo.Identifier)
+			switch res.Category {
+			case "normal":
+				err = buyGeneralItems(h, tx, req, res, playerInfo)
 				if err != nil {
-					tx.Rollback()
-					logger.Error("Failed to Update record:", zap.Error(err))
 					return c.JSON(http.StatusOK, Message{Message: "fail"})
 				}
-			}
-			for i := 0; i < int(req.Quantity); i++ {
-				err = h.InsertHistoryPurchaseItem(tx, res, playerInfo.Identifier)
+				tx.Commit()
+				return c.JSON(http.StatusOK, "success")
+			case "vehicle":
+				err = buyVehicleItems(h, tx, req, res, playerInfo)
 				if err != nil {
-					tx.Rollback()
-					logger.Error("Failed to Update record:", zap.Error(err))
 					return c.JSON(http.StatusOK, Message{Message: "fail"})
 				}
-			}
-			err = h.InsertGivePlayerItem(tx, res, req, playerInfo.Identifier)
-			if err != nil {
-				tx.Rollback()
-				logger.Error("Failed to Update record:", zap.Error(err))
-				return c.JSON(http.StatusOK, Message{Message: "fail"})
+				tx.Commit()
+				return c.JSON(http.StatusOK, "success")
 			}
 		}
-
-		logger.Info(fmt.Sprintf("update Count : %v", count))
-		ms := HandleMessage(count)
-		if ms.Message == "success" {
-			logger.Info("PurchaseItem Success")
-			tx.Commit()
-			return c.JSON(http.StatusOK, ms)
-		}
-		tx.Rollback()
-		return c.JSON(http.StatusOK, ms)
 	}
 	tx.Rollback()
 	return c.JSON(http.StatusOK, Message{Message: "fail"})
+}
+
+func buyVehicleItems(h Handler, tx *sql.Tx, req RequestBuyItem, res ResponseValidateItem, playerInfo *mw.JwtCustomClaims) error {
+	logger := mlog.Logg
+	if HandleDateExpire(res.ExpireDateItem) {
+		if req.Quantity > 1 {
+			tx.Rollback()
+			logger.Error("User requested more than available quantity.", zap.Int64("Requested", req.Quantity), zap.Int64("Available", res.RemainQuantity))
+			return fmt.Errorf("user requested more than available quantity")
+		}
+		err := h.InsertExpireDateVehicle(tx, res, playerInfo.Identifier)
+		if err != nil {
+			tx.Rollback()
+			logger.Error("Failed to Update record:", zap.Error(err))
+			return fmt.Errorf("failed to update record")
+		}
+		for i := 0; i < int(req.Quantity); i++ {
+			err := h.InsertHistoryPurchaseItem(tx, res, playerInfo.Identifier)
+			if err != nil {
+				tx.Rollback()
+				logger.Error("Failed to Update record:", zap.Error(err))
+				return fmt.Errorf("failed to update record")
+			}
+		}
+	}
+	return nil
+}
+
+func buyGeneralItems(h Handler, tx *sql.Tx, req RequestBuyItem, res ResponseValidateItem, playerInfo *mw.JwtCustomClaims) error {
+	logger := mlog.Logg
+	if HandleDateExpire(res.ExpireDateItem) {
+		if req.Quantity > 1 {
+			tx.Rollback()
+			logger.Error("User requested more than available quantity.", zap.Int64("Requested", req.Quantity), zap.Int64("Available", res.RemainQuantity))
+			return fmt.Errorf("user requested more than available quantity")
+		}
+		err := h.InsertExpireDateItem(tx, res, playerInfo.Identifier)
+		if err != nil {
+			tx.Rollback()
+			logger.Error("Failed to Update record:", zap.Error(err))
+			return fmt.Errorf("failed to update record")
+		}
+	}
+	for i := 0; i < int(req.Quantity); i++ {
+		err := h.InsertHistoryPurchaseItem(tx, res, playerInfo.Identifier)
+		if err != nil {
+			tx.Rollback()
+			logger.Error("Failed to Update record:", zap.Error(err))
+			return fmt.Errorf("failed to update record")
+		}
+	}
+	err := h.InsertGivePlayerItem(tx, res, req, playerInfo.Identifier)
+	if err != nil {
+		tx.Rollback()
+		logger.Error("Failed to Update record:", zap.Error(err))
+		return fmt.Errorf("failed to update record")
+	}
+	return nil
 }

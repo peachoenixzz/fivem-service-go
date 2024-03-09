@@ -2,8 +2,6 @@ package main
 
 import (
 	"github.com/kkgo-software-engineering/workshop/internals/cashshop"
-	"os"
-
 	"github.com/kkgo-software-engineering/workshop/internals/fivemroutine"
 	"github.com/kkgo-software-engineering/workshop/internals/gachapon"
 	"github.com/kkgo-software-engineering/workshop/internals/playeridentifier"
@@ -16,11 +14,11 @@ import (
 	"github.com/kkgo-software-engineering/workshop/internals/uploadimage"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
+	"os"
 )
 
 func main() {
 	logger, _ := zap.NewProduction()
-
 	//os.Setenv("cashshop", "true")
 	if os.Getenv("quest") != "" {
 		logger.Info("prepare to quest")

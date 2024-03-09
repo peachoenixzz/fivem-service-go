@@ -7,7 +7,7 @@ import (
 )
 
 func handleCardAItem(res ResponseRequireQuestPlayer, pi map[string]int) ResponseRequireQuestPlayer {
-	questAValue, found := pi["quest_a"]
+	questAValue, found := pi["exp"]
 	if found {
 		res = ResponseRequireQuestPlayer{
 			WeightLevel: res.WeightLevel,
