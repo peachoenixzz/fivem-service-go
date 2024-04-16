@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kkgo-software-engineering/workshop/internals/cashshop"
+	"github.com/kkgo-software-engineering/workshop/internals/discordbot"
 	"github.com/kkgo-software-engineering/workshop/internals/fivemroutine"
 	"github.com/kkgo-software-engineering/workshop/internals/gachapon"
 	"github.com/kkgo-software-engineering/workshop/internals/playeridentifier"
@@ -19,7 +20,7 @@ import (
 
 func main() {
 	logger, _ := zap.NewProduction()
-	//os.Setenv("cashshop", "true")
+	//os.Setenv("policelogs", "true")
 	if os.Getenv("quest") != "" {
 		logger.Info("prepare to quest")
 		playerquest.InitService()
@@ -85,6 +86,12 @@ func main() {
 		logger.Info("prepare to init gachapon")
 		gachapon.InitService()
 		logger.Info("Registered FiveM log service on /gachapon")
+	}
+
+	if os.Getenv("discordbot") != "" {
+		logger.Info("prepare to init discordbot")
+		discordbot.InitService()
+		logger.Info("Registered discordbot")
 	}
 
 	logger.Info("Register service fail")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/kkgo-software-engineering/workshop/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -37,7 +38,14 @@ func InitService() {
 	if err != nil {
 		logger.Fatal("unable to configure database", zap.Error(err))
 	}
-	e := RegRoute(cfg, logger, postgresDB, mongoDB)
+
+	dg, err := discordgo.New("Bot " + cfg.DiscordToken)
+	if err != nil {
+		logger.Fatal("error creating Discord session", zap.Error(err))
+	}
+	defer dg.Close()
+
+	e := RegRoute(cfg, logger, postgresDB, mongoDB, dg)
 	err = mongoDB.Ping(ctx, nil)
 	if err != nil {
 		fmt.Printf("unable to ping, error: %v", err)

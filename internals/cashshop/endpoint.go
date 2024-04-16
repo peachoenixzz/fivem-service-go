@@ -26,6 +26,7 @@ type ResponseInitCashShop struct {
 
 type RequestBuyItem struct {
 	Name     string `json:"name"`
+	Point    int64  `json:"point"`
 	Quantity int64  `json:"quantity"`
 }
 
@@ -37,6 +38,7 @@ type ResponseItemCashShop struct {
 	PromotionFlag  string `json:"promotion_flag"`
 	MaxLimit       int64  `json:"max_limit"`
 	Point          int64  `json:"point"`
+	OriginalPoint  int64  `json:"original_point"`
 	RemainQuantity int64  `json:"remaining_quantity"`
 }
 

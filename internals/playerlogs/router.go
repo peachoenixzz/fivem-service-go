@@ -2,6 +2,7 @@ package playerlogs
 
 import (
 	"database/sql"
+	"github.com/bwmarrin/discordgo"
 	"github.com/kkgo-software-engineering/workshop/config"
 	mw "github.com/kkgo-software-engineering/workshop/middleware"
 	"github.com/kkgo-software-engineering/workshop/mlog"
@@ -11,13 +12,13 @@ import (
 	"go.uber.org/zap"
 )
 
-func RegRoute(cfg config.Config, logger *zap.Logger, postgresDB *sql.DB, mongodb *mongo.Client) *echo.Echo {
+func RegRoute(cfg config.Config, logger *zap.Logger, postgresDB *sql.DB, mongodb *mongo.Client, dg *discordgo.Session) *echo.Echo {
 	e := echo.New()
 	e.Use(mlog.Middleware(logger))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 	e.Use(middleware.BasicAuth(mw.Authenicate()))
-	hFiveMLog := New(cfg.FeatureFlag, postgresDB, mongodb)
+	hFiveMLog := New(cfg.FeatureFlag, postgresDB, mongodb, dg)
 	e.POST("/", hFiveMLog.AddFiveMLogEndPoint)
 	e.POST("/custom", hFiveMLog.CustomLogEndPoint)
 	e.GET("/", hFiveMLog.GetFiveMLogEndPoint)

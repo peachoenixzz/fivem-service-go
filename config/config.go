@@ -21,6 +21,7 @@ type Config struct {
 	DBConnection      string
 	MongoDBConnection string
 	MySQLDBConnection string
+	DiscordToken      string
 }
 
 type Server struct {
@@ -37,6 +38,9 @@ const (
 	cPort                          = "PORT"
 	cFlagIsLimitMaxBalanceOnCreate = "FLAG_IS_LIMIT_MAX_SPEND_ON_CREATE"
 	cDBConnection                  = "DB_CONNECTION"
+	cMongoDBConnection             = "MONGO_DB_CONNECTION"
+	cMySQLDBConnection             = "MYSQL_DB_CONNECTION"
+	cDiscordToken                  = "DISCORD_TOKEN"
 )
 
 const (
@@ -47,6 +51,7 @@ const (
 	//mySQLDBConnection = "peachoenixz:petuyio001@tcp(103.212.181.194:3306)/es_extended_feature"
 	mySQLDBConnection = "doraemonfivem:Doraemon001FiveM@tcp(103.212.181.194:3306)/es_extended"
 	mongoDBConnection = "mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs" //mongodb://fivemlogs:isylzjkoshkm001@mongodb/fivem-logs
+	discordToken      = "MTExMzkxNzY0NDQ2MzE2MTM2NA.GhvO0t.kCpXbMUNFslHX2EVKf2GEF4r458hXYW3ICzG4w"
 )
 
 func (c *Cfg) All() Config {
@@ -59,8 +64,9 @@ func (c *Cfg) All() Config {
 			IsLimitMaxBalanceOnCreate: c.envBool(cFlagIsLimitMaxBalanceOnCreate, false),
 		},
 		DBConnection:      c.envString(cDBConnection, dDBConnection),
-		MongoDBConnection: c.envString(cDBConnection, mongoDBConnection),
+		MongoDBConnection: c.envString(cMongoDBConnection, mongoDBConnection),
 		MySQLDBConnection: c.envString(cDBConnection, mySQLDBConnection),
+		DiscordToken:      c.envString(cDiscordToken, discordToken),
 	}
 }
 

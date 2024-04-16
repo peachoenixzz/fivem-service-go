@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/kkgo-software-engineering/workshop/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,18 +16,20 @@ type Handler struct {
 	Cfg        config.FeatureFlag
 	PostgresDB *sql.DB
 	MongoDB    *mongo.Client
+	Discord    *discordgo.Session
 }
 
-func New(cfgFlag config.FeatureFlag, postgresDB *sql.DB, mongoDB *mongo.Client) *Handler {
-	return &Handler{cfgFlag, postgresDB, mongoDB}
+func New(cfgFlag config.FeatureFlag, postgresDB *sql.DB, mongoDB *mongo.Client, dg *discordgo.Session) *Handler {
+	return &Handler{cfgFlag, postgresDB, mongoDB, dg}
 }
 
 func (h Handler) CustomMLog(req RequestCustomLog) ([]Response, error) {
 	opts := options.Find().SetSort(bson.M{"_id": -1}).SetLimit(500)
 
-	fmt.Println(req.Begin, req.Until)
-
-	f := selectQuery(req)
+	f, err := selectQuery(req)
+	if err != nil {
+		return []Response{}, err
+	}
 
 	fmt.Println("Query:", f)
 
@@ -41,13 +44,13 @@ func (h Handler) CustomMLog(req RequestCustomLog) ([]Response, error) {
 		return []Response{}, err
 	}
 
-	for _, v := range res {
-		fmt.Println(fmt.Sprintf("Player : %v %v ", v.Event, v.Content))
-	}
 	return res, nil
 }
 
 func (h Handler) InsertMLog(req RequestInsert) (Message, error) {
+	if err := handleDiscordLog(req, h); err != nil {
+		return Message{Status: http.StatusInternalServerError, Message: "Discord Error"}, err
+	}
 	col := h.MongoDB.Database("fivem-logs").Collection("fivemlogs")
 	_, err := col.InsertOne(context.Background(), req)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/kkgo-software-engineering/workshop/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,10 +16,11 @@ type Handler struct {
 	Cfg        config.FeatureFlag
 	PostgresDB *sql.DB
 	MongoDB    *mongo.Client
+	Discord    *discordgo.Session
 }
 
-func New(cfgFlag config.FeatureFlag, postgresDB *sql.DB, mongoDB *mongo.Client) *Handler {
-	return &Handler{cfgFlag, postgresDB, mongoDB}
+func New(cfgFlag config.FeatureFlag, postgresDB *sql.DB, mongoDB *mongo.Client, dg *discordgo.Session) *Handler {
+	return &Handler{cfgFlag, postgresDB, mongoDB, dg}
 }
 
 func (h Handler) InsertMLog(req Request) (Message, error) {

@@ -77,9 +77,11 @@ func (h Handler) GetCashShopItem(ctx context.Context, discordID string) ([]Respo
 	logger.Info("prepare to make query Discord ID")
 	var items []ResponseItemCashShop
 	stmtStr := `
-				SELECT
-    DISTINCT ci.name AS item_name,
+	SELECT
+	DISTINCT
+	ci.name AS item_name,
     ci.point AS price,
+    ci.original_point AS original_point,
     ci.limit,
     ci.limit_type,
     CASE
@@ -88,7 +90,10 @@ func (h Handler) GetCashShopItem(ctx context.Context, discordID string) ([]Respo
         WHEN ci.limit_type = '02' THEN ci.limit - COALESCE(hourly_count.count, 0)
         ELSE -1
     END AS remaining_quantity,
-    i.label as label_name,
+	CASE 
+		WHEN ci.expire_days = -1 THEN  i.label 
+		WHEN ci.expire_days != -1 THEN  CONCAT(i.label, ' (', ci.expire_days, ' วัน)')
+	END AS label_name,
 	ci.promotion_flag,
 	ci.description
 	FROM
@@ -158,7 +163,7 @@ ORDER BY
 
 	for rows.Next() {
 		var item ResponseItemCashShop
-		err := rows.Scan(&item.Name, &item.Point, &item.MaxLimit, &item.LimitType, &item.RemainQuantity, &item.LabelName, &item.PromotionFlag, &item.Description)
+		err := rows.Scan(&item.Name, &item.Point, &item.OriginalPoint, &item.MaxLimit, &item.LimitType, &item.RemainQuantity, &item.LabelName, &item.PromotionFlag, &item.Description)
 		if err != nil {
 			logger.Error("Database Error : ", zap.Error(err))
 			return []ResponseItemCashShop{}, echo.NewHTTPError(http.StatusInternalServerError, "Database Error : ", err.Error())
@@ -228,6 +233,7 @@ func (h Handler) ValidatePurchaseItem(tx *sql.Tx, req RequestBuyItem, discordID 
 												  WHEN HOUR(NOW()) BETWEEN 18 AND 23 THEN '18.00 - 0.00'
 											  END
 			WHERE ci.name = ?
+			AND	  ci.point = ?
 			ORDER BY
 				ci.name;
 			`
@@ -237,6 +243,7 @@ func (h Handler) ValidatePurchaseItem(tx *sql.Tx, req RequestBuyItem, discordID 
 		discordID,
 		discordID,
 		req.Name,
+		req.Point,
 	}
 
 	row := tx.QueryRow(stmtStr, args...)
@@ -258,7 +265,7 @@ func (h Handler) PurchaseItem(tx *sql.Tx, req RequestBuyItem, discordID string) 
 	stmtStr := `
 	UPDATE cash_point AS cp
 	JOIN cash_items AS ci
-	ON cp.discord_id = ? AND ci.name = ?
+	ON cp.discord_id = ? AND ci.name = ? AND ci.point = ?
 	SET cp.point = cp.point - (ci.point * ?)
 	WHERE cp.point >= (ci.point * ?);
 	`
@@ -266,13 +273,13 @@ func (h Handler) PurchaseItem(tx *sql.Tx, req RequestBuyItem, discordID string) 
 	args := []interface{}{
 		discordID,
 		req.Name,
+		req.Point,
 		req.Quantity,
 		req.Quantity,
 	}
 
 	r, err := tx.Exec(stmtStr, args...)
 	if err != nil {
-		// If there is an error, rollback the transaction
 		tx.Rollback()
 		logger.Error("Failed to Update record:", zap.Error(err))
 		return 0, err
@@ -295,17 +302,17 @@ func (h Handler) InsertExpireDateItem(tx *sql.Tx, i ResponseValidateItem, discor
 	stmtStr := `
 		INSERT
 		INTO items_expire (item_name,player_id,category,expire_timestamp)
-		VALUES (?,?,?,?)
+		VALUES (?,?,?,DATE_ADD(SYSDATE(), INTERVAL 7 DAY))
 	`
 	logger.Info("prepare to calculate expire date ")
-	currentTime := time.Now()
-	expireDate := currentTime.AddDate(0, 0, i.ExpireDateItem)
+	//currentTime := time.Now()
+	//expireDate := currentTime.AddDate(0, 0, i.ExpireDateItem)
 	logger.Info("done to calculate expire date ")
 	args := []interface{}{
 		i.Name,
 		discordID,
 		i.Category,
-		expireDate,
+		//expireDate,
 	}
 	logger.Info("prepare to Insert expire date ")
 	r, err := tx.Exec(stmtStr, args...)
@@ -331,7 +338,6 @@ func (h Handler) InsertExpireDateVehicle(tx *sql.Tx, i ResponseValidateItem, dis
 	var result map[string]interface{}
 	parts := strings.Split(i.Name, "_")
 	filePath := filepath.Join("/app/shared/vehicle", fmt.Sprintf("%s.json", parts[0]))
-	fmt.Println(filePath)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		fmt.Println("Error reading JSON file:", err)
