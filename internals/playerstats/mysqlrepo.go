@@ -133,6 +133,10 @@ func (h Handler) AllMoney(ctx context.Context) error {
 			lastname
 		FROM 
 			users
+		WHERE
+    	accounts != '[]'
+    	AND firstname != ''
+    	AND lastname != ''
 	`
 
 	stmt, err := h.MysqlDB.PrepareContext(ctx, stmtStr)
