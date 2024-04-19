@@ -41,32 +41,40 @@ type Response struct {
 }
 
 type RequestInsert struct {
-	Event   string `json:"event"`
-	Content string `json:"content"`
-	Source  int    `json:"source"`
-	Color   string `json:"color"`
-	Options struct {
-		Public    bool `json:"public"`
-		Important bool `json:"important"`
-	} `json:"options"`
+	Event     string    `json:"event"`
+	Content   string    `json:"content"`
+	Source    int       `json:"source"`
+	Color     string    `json:"color"`
+	Options   Options   `json:"options"`
 	Image     string    `json:"image"`
 	Timestamp time.Time `json:"timestamp"`
-	Player    struct {
-		Name        string `json:"name"`
-		Identifiers struct {
-			Ip       string `json:"ip"`
-			Steam    string `json:"steam"`
-			Discord  string `json:"discord"`
-			License  string `json:"license"`
-			License2 string `json:"license2"`
-		} `json:"identifiers"`
-		Steam struct {
-			Id     int    `json:"id"`
-			Avatar string `json:"avatar"`
-			Url    string `json:"url"`
-		} `json:"steam"`
-	} `json:"player"`
-	Hardware []string `json:"hardware"`
+	Player    Player    `json:"player"`
+	Hardware  []string  `json:"hardware"`
+}
+
+type Options struct {
+	Public    bool `json:"public"`
+	Important bool `json:"important"`
+}
+
+type Player struct {
+	Name        string      `json:"name"`
+	Identifiers Identifiers `json:"identifiers"`
+	Steam       PlayerSteam `json:"steam"`
+}
+
+type Identifiers struct {
+	Ip       string `json:"ip"`
+	Steam    string `json:"steam"`
+	Discord  string `json:"discord"`
+	License  string `json:"license"`
+	License2 string `json:"license2"`
+}
+
+type PlayerSteam struct {
+	Id     int    `json:"id"`
+	Avatar string `json:"avatar"`
+	Url    string `json:"url"`
 }
 
 type RequestCustomLog struct {

@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/kkgo-software-engineering/workshop/config"
+	"github.com/kkgo-software-engineering/workshop/mlog"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
@@ -20,7 +22,20 @@ func InitService() {
 
 	cfg := config.New().All()
 
-	logger, err := zap.NewProduction()
+	es, err := elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{
+			os.Getenv("ES_URL_2"),
+			os.Getenv("ES_URL_1"),
+		},
+		Username: os.Getenv("ES_USER"),
+		Password: os.Getenv("ES_PASS"),
+		APIKey:   os.Getenv("ES_API_KEY"),
+	})
+	if err != nil {
+		log.Fatalf("Error creating the client: %s", err)
+	}
+	log.Println(elasticsearch.Version)
+	logger, err := mlog.SetupLogger(es, "players")
 	if err != nil {
 		log.Fatal(err)
 	}

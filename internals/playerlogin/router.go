@@ -17,6 +17,7 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 	e := echo.New()
 	// Middleware
 	e.Use(mlog.Middleware(logger))
+	e.Use(mw.RequestMetadataMiddleware(logger))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 	h := New(cfg.FeatureFlag, mongodb, mysqlDB)

@@ -51,9 +51,9 @@ func PerClientRateLimiter(next echo.HandlerFunc) echo.HandlerFunc {
 
 func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysqlDB *sql.DB) *echo.Echo {
 	e := echo.New()
-
 	// Middleware
 	e.Use(mlog.Middleware(logger))
+	e.Use(mw.RequestMetadataMiddleware(logger))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 	h := New(cfg.FeatureFlag, mongodb, mysqlDB)
@@ -65,7 +65,7 @@ func RegRoute(cfg config.Config, logger *zap.Logger, mongodb *mongo.Client, mysq
 		SigningKey: []byte("550076b5-532c-439e-92d9-655f8207fdee"),
 	}
 	e.Use(echojwt.WithConfig(JWTConfig))
-	///cash-shop/
+	//cash-shop/
 	e.GET("/users", h.GetInitCashShopEndPoint)
 	e.GET("/users/items", h.GetCashShopItemEndPoint)
 	e.PUT("/users/buy", h.BuyCashShopEndPoint, PerClientRateLimiter)

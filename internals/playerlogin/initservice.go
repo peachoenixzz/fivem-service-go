@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/kkgo-software-engineering/workshop/mlog"
 	"log"
 	"net/http"
 	"os"
@@ -21,7 +23,20 @@ func InitService() {
 
 	cfg := config.New().All()
 
-	logger, err := zap.NewProduction()
+	es, err := elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{
+			"http://localhost:9200",
+			"http://localhost:9300",
+		},
+		Username: "elastic",
+		Password: "Thecircle112!@#",
+		APIKey:   "NkdxazhZNEI3LXlqc0V6c19aREY6SE5rNG9kRjRTOHU4MEVRa2NVb2Jqdw==",
+	})
+	if err != nil {
+		log.Fatalf("Error creating the client: %s", err)
+	}
+	log.Println(elasticsearch.Version)
+	logger, err := mlog.SetupLogger(es, "fivem")
 	if err != nil {
 		log.Fatal(err)
 	}

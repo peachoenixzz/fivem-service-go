@@ -1,7 +1,6 @@
 package playerlogin
 
 import (
-	"fmt"
 	mw "github.com/kkgo-software-engineering/workshop/middleware"
 	"github.com/kkgo-software-engineering/workshop/mlog"
 	"github.com/labstack/echo/v4"
@@ -32,15 +31,13 @@ func (h Handler) GetPlayerIdentify(c echo.Context) error {
 		logger.Error("Bind Err: ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-	logger.Info("prepare log")
-	fmt.Printf("steam id is %s", req.Identifier)
-
-	res, err := h.PlayerIdentify(c.Request().Context(), req)
+	logger.Info("prepare to check discord ID", zap.String("service", "playerlogin"), zap.String("discordID", req.Identifier))
+	res, err := h.PlayerIdentify(c, req)
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
-	logger.Info("GetPlayerIdentify endpoint end")
+	logger.Info("GetPlayerIdentify endpoint end", zap.String("service", "playerlogin"), zap.String("discordID", req.Identifier))
 	return mw.LoginSuccess(c, mw.Response(res))
 }

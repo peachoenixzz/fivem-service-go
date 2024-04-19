@@ -89,6 +89,8 @@ func (h Handler) BuyCashShopEndPoint(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Failed to bind request")
 	}
 
+	logger.Info("Processing payment")
+
 	tx, err := h.MysqlDB.Begin()
 
 	if err != nil {

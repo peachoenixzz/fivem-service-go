@@ -15,6 +15,7 @@ import (
 func RegRoute(cfg config.Config, logger *zap.Logger, postgresDB *sql.DB, mongodb *mongo.Client, dg *discordgo.Session) *echo.Echo {
 	e := echo.New()
 	e.Use(mlog.Middleware(logger))
+	e.Use(mw.RequestMetadataMiddleware(logger))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 	e.Use(middleware.BasicAuth(mw.Authenicate()))

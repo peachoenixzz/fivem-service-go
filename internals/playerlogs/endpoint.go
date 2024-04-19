@@ -46,21 +46,20 @@ func (h Handler) AddFiveMLogEndPoint(c echo.Context) error {
 	logger := mlog.L(c)
 	req := RequestInsert{}
 	err := c.Bind(&req)
-	logger.Info("get request event endpoint successfully")
+	//logger.Info("get request event endpoint successfully")
 	if err != nil {
 		logger.Error("bad request body", zap.Error(err))
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request body", err.Error())
 	}
-
+	LogRequestInsert(logger, req)
 	var mes Message
 	mes, err = h.InsertMLog(req)
-	logger.Info("prepare data to create successfully")
+	//logger.Info("prepare data to create successfully")
 	if err != nil {
 		logger.Error("Database Error : ", zap.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, mes)
 	}
-
-	logger.Info("create successfully")
+	//logger.Info("create successfully")
 	return c.JSON(http.StatusCreated, mes)
 }
 
@@ -103,4 +102,27 @@ func (h Handler) ByEventEndPoint(c echo.Context) error {
 
 	logger.Info("get event endpoint successfully")
 	return c.JSON(http.StatusOK, res)
+}
+
+func LogRequestInsert(logger *zap.Logger, req RequestInsert) {
+	logger.Info("Player Action",
+		zap.String("Event", req.Event),
+		zap.String("Content", req.Content),
+		zap.Int("Source", req.Source),
+		zap.String("Color", req.Color),
+		zap.Bool("Options.Public", req.Options.Public),
+		zap.Bool("Options.Important", req.Options.Important),
+		zap.String("Image", req.Image),
+		zap.Time("Timestamp", req.Timestamp),
+		zap.String("Player.Name", req.Player.Name),
+		zap.String("Player.Identifiers.Ip", req.Player.Identifiers.Ip),
+		zap.String("Player.Identifiers.Steam", req.Player.Identifiers.Steam),
+		zap.String("Player.Identifiers.Discord", req.Player.Identifiers.Discord),
+		zap.String("Player.Identifiers.License", req.Player.Identifiers.License),
+		zap.String("Player.Identifiers.License2", req.Player.Identifiers.License2),
+		zap.Int("Player.Steam.Id", req.Player.Steam.Id),
+		zap.String("Player.Steam.Avatar", req.Player.Steam.Avatar),
+		zap.String("Player.Steam.Url", req.Player.Steam.Url),
+		zap.Strings("Hardware", req.Hardware),
+	)
 }
