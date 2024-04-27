@@ -20,7 +20,7 @@ import (
 
 func main() {
 	logger, _ := zap.NewProduction()
-	os.Setenv("playerstats", "true")
+	//os.Setenv("playerstats", "true")
 	if os.Getenv("quest") != "" {
 		logger.Info("prepare to quest")
 		playerquest.InitService()

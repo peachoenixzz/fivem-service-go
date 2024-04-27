@@ -51,11 +51,11 @@ func (h Handler) InsertMLog(req RequestInsert) (Message, error) {
 	if err := handleDiscordLog(req, h); err != nil {
 		return Message{Status: http.StatusInternalServerError, Message: "Discord Error"}, err
 	}
-	col := h.MongoDB.Database("fivem-logs").Collection("fivemlogs")
-	_, err := col.InsertOne(context.Background(), req)
-	if err != nil {
-		return Message{Status: http.StatusInternalServerError, Message: "Database Failed"}, err
-	}
+	//col := h.MongoDB.Database("fivem-logs").Collection("fivemlogs")
+	//_, err := col.InsertOne(context.Background(), req)
+	//if err != nil {
+	//	return Message{Status: http.StatusInternalServerError, Message: "Database Failed"}, err
+	//}
 	return Message{Status: http.StatusCreated, Message: "Created Success"}, nil
 }
 

@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
-	"strings"
 	"sync"
 	"time"
 )
@@ -65,9 +64,16 @@ func (ew *ElasticsearchWriter) Write(p []byte) (n int, err error) {
 		return 0, err
 	}
 
-	fmt.Println(strings.NewReader(string(logJSON)))
+	//fmt.Println(strings.NewReader(string(logJSON)))
+	location, err := time.LoadLocation("Asia/Jakarta") // Specify the desired time zone
+	if err != nil {
+		fmt.Println("Error loading location:", err)
+		return
+	}
 
-	currentDate := time.Now().Format("2006-01-02")
+	currentDate := time.Now().In(location).Format("2006-01-02")
+	fmt.Println(currentDate) // '2018-01-02
+	fmt.Println(ew.Name)     // 'fivem
 	indexName := fmt.Sprintf("%s-logs-%s", ew.Name, currentDate)
 	req := esapi.IndexRequest{
 		Index:   indexName,

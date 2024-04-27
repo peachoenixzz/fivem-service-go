@@ -144,22 +144,23 @@ func (h Handler) UpdateVipPointByPlayerDiscord(tx *sql.Tx, req RequestUpdateVip,
 func (h Handler) QueryPlayerDiscord(c echo.Context, discordID string) (Response, error) {
 	logger := mlog.Logg
 	logger.Info("prepare to make query Discord ID")
-	query := `SELECT 
-    COUNT(vip.discord_id) AS countID,
-    vip.discord_id, 
-    vip.steam_id, 
-    vip.vip_point, 
-    vip.extra_point, 
-    vip.permanant_point, 
-    vip.priority,
-    vip.identifier,
-    DATE_FORMAT(vip.expire_date, '%Y-%m-%d') AS expire_date , 
-    DATE_FORMAT(vip.last_updated, '%Y-%m-%d') AS last_updated,
-    cash_point.point  
-FROM vip 
-LEFT JOIN cash_point ON vip.discord_id = cash_point.discord_id
-WHERE vip.discord_id = ?;
-`
+	query := `
+		SELECT 
+			COUNT(vip.discord_id) AS countID,
+			vip.discord_id, 
+			vip.steam_id, 
+			vip.vip_point, 
+			vip.extra_point, 
+			vip.permanant_point, 
+			vip.priority,
+			vip.identifier,
+			DATE_FORMAT(vip.expire_date, '%Y-%m-%d') AS expire_date , 
+			DATE_FORMAT(vip.last_updated, '%Y-%m-%d') AS last_updated,
+			cash_point.point
+		FROM vip 
+		LEFT JOIN cash_point ON vip.discord_id = cash_point.discord_id
+		WHERE vip.discord_id = ?;
+	`
 
 	// Create a prepared statement
 	logger.Info("mysql prepare query Discord ID")
